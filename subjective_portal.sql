@@ -95,7 +95,9 @@ CREATE TABLE `testing` (
   `project_title` varchar(255) NOT NULL,
   `testing_name` varchar(255) NOT NULL,
   `testing_method` varchar(255) NOT NULL,
-  `checked_by_engineer` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = checked by engineer, 0 = not checked',
+  `created_by` varchar(100) DEFAULT NULL,
+  `checked_by_engineer_t1` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = Table 1 checked by engineer',
+  `checked_by_engineer_t2` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = Table 2 checked by engineer',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -123,7 +125,9 @@ CREATE TABLE `testing_record` (
   `testing_id` int(10) UNSIGNED NOT NULL,
   `field_key` tinyint(3) UNSIGNED NOT NULL,
   `row_number` int(10) UNSIGNED NOT NULL,
+  `table_number` tinyint(1) NOT NULL DEFAULT 1 COMMENT '1 = Table 1 (owner), 2 = Table 2 (others)',
   `record_value` varchar(255) DEFAULT NULL,
+  `edited_by` varchar(100) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -195,7 +199,7 @@ ALTER TABLE `testing_description`
 --
 ALTER TABLE `testing_record`
   ADD PRIMARY KEY (`testing_record_id`),
-  ADD UNIQUE KEY `uq_testing_field_row` (`testing_id`,`field_key`,`row_number`),
+  ADD UNIQUE KEY `uq_testing_field_row` (`testing_id`,`field_key`,`row_number`,`table_number`),
   ADD KEY `fk_record_testing` (`testing_id`);
 
 --

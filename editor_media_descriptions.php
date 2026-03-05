@@ -279,12 +279,12 @@ if ($editTid) {
         $drr = $dr->get_result();
         while ($d = $drr->fetch_assoc()) $editDesc[] = $d;
 
-        $gnQ = $conn->prepare("SELECT DISTINCT record_value AS group_name FROM testing_record WHERE field_key = 1 AND testing_id = ? AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
-        $gnQ->bind_param("i", $editTid);
-        $gnQ->execute();
-        $gnQ = $gnQ->get_result();
+        $gnStmt = $conn->prepare("SELECT DISTINCT record_value AS group_name FROM testing_record WHERE field_key = 1 AND testing_id = ? AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
+        $gnStmt->bind_param("i", $editTid);
+        $gnStmt->execute();
+        $gnResult = $gnStmt->get_result();
         $existingGroupNames = [];
-        while ($gn = $gnQ->fetch_assoc()) $existingGroupNames[] = $gn['group_name'];
+        while ($gn = $gnResult->fetch_assoc()) $existingGroupNames[] = $gn['group_name'];
     }
 }
 if (!isset($existingGroupNames)) $existingGroupNames = [];

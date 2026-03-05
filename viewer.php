@@ -1012,23 +1012,37 @@ function getAvgClass($a)
 
         /* ── Media ────────────────────────────────────── */
         .media-grid {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 12px;
             margin-top: 10px;
         }
 
-        .media-grid img {
-            border-radius: 14px;
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            transition: transform 0.25s;
+        .media-thumb-square {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(107,141,181,0.06);
         }
 
-        .media-grid img:hover {
-            transform: scale(1.04);
+        .media-thumb-square img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
         }
+
+        .media-thumb-square:hover img {
+            transform: scale(1.06);
+        }
+
+        /* ── Row hide button ─────────────────────────── */
+        .btn-hide-row { background:none; border:none; color:#CBD5E0; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:13px; transition:all 0.2s; }
+        .btn-hide-row:hover { color:#718096; }
+        tr.row-hidden { opacity:0.35; }
+        tr.row-hidden td:not(:first-child) { color:transparent !important; user-select:none; }
 
         /* ── Description Cards ────────────────────────── */
         .desc-card {
@@ -1965,7 +1979,7 @@ function getAvgClass($a)
                         $t .= "s";
                     }
                     $ws  = $w ? "WHERE " . implode(" AND ", $w) : "";
-                    $sql = "SELECT t.testing_id,t.project_name,t.project_title,t.testing_name,t.testing_method,t.checked_by_engineer,d.display_order,d.field_name,d.field_key,d.value_type,r.record_value,r.row_number FROM testing t INNER JOIN field_definitions d ON d.testing_id=t.testing_id LEFT JOIN testing_record r ON r.testing_id=t.testing_id AND r.field_key=d.field_key $ws ORDER BY t.testing_id,r.row_number,d.display_order";
+                    $sql = "SELECT t.testing_id,t.project_name,t.project_title,t.testing_name,t.testing_method,t.checked_by_engineer_t1,t.checked_by_engineer_t2,t.created_by,d.display_order,d.field_name,d.field_key,d.value_type,r.record_value,r.row_number,r.table_number,r.edited_by FROM testing t INNER JOIN field_definitions d ON d.testing_id=t.testing_id LEFT JOIN testing_record r ON r.testing_id=t.testing_id AND r.field_key=d.field_key $ws ORDER BY t.testing_id,r.table_number,r.row_number,d.display_order";
                     $stmt = $conn->prepare($sql);
                     if ($pa) $stmt->bind_param($t, ...$pa);
                     $stmt->execute();
@@ -1984,6 +1998,46 @@ function getAvgClass($a)
                     }
                 }
 
+                function renderDataTable($entry, $rowsKey, $tO, $nO) {
+                    $rows = $entry['rows'][$rowsKey] ?? [];
+                    echo "<div class='overflow-x' style='margin-top:10px;'><table><thead><tr>";
+                    echo "<th style='width:36px;'></th>";
+                    foreach ($tO as $d) echo "<th>" . htmlspecialchars($entry['fields'][$d]['field_name']) . "</th>";
+                    echo "<th style='text-align:center;'><i class='fas fa-calculator'></i> Average</th>";
+                    foreach ($nO as $d) echo "<th>" . htmlspecialchars($entry['fields'][$d]['field_name']) . "</th>";
+                    echo "</tr></thead><tbody>";
+                    if (empty($rows)) {
+                        $span = count($tO) + count($nO) + 2;
+                        echo "<tr><td colspan='$span' style='text-align:center;color:#A0AEC0;padding:16px;'>No data</td></tr>";
+                    } else {
+                        foreach ($rows as $rn => $rd) {
+                            $rowId = 'row_' . $rowsKey . '_' . $rn . '_' . uniqid();
+                            echo "<tr data-row-key='$rowId'>";
+                            echo "<td style='text-align:center;'><button type='button' class='btn-hide-row' title='Hide/Show row' onclick='toggleRow(this)'><i class='fas fa-eye'></i></button></td>";
+                            foreach ($tO as $d) {
+                                $v = $rd[$d] ?? null;
+                                echo "<td>" . (($v === null || $v === '') ? '—' : htmlspecialchars($v)) . "</td>";
+                            }
+                            $nv = [];
+                            foreach ($nO as $d) {
+                                $v = $rd[$d] ?? null;
+                                if ($v !== null && $v !== '') { $fv = (float)$v; if ($fv >= 0) $nv[] = $fv; }
+                            }
+                            if (count($nv) > 0) {
+                                $avg = array_sum($nv) / count($nv);
+                                $cls = getAvgClass($avg);
+                                echo "<td class='avg-cell $cls'>" . number_format(max(0, $avg), 3) . "</td>";
+                            } else echo "<td class='avg-cell avg-na'>N/A</td>";
+                            foreach ($nO as $d) {
+                                $v = $rd[$d] ?? null;
+                                echo "<td>" . (($v === null || $v === '') ? '—' : htmlspecialchars($v)) . "</td>";
+                            }
+                            echo "</tr>";
+                        }
+                    }
+                    echo "</tbody></table></div>";
+                }
+
                 function displayResults($conn, $result)
                 {
                     static $renderSeq = 0; // global counter across all displayResults calls
@@ -1991,14 +2045,33 @@ function getAvgClass($a)
                     $data = [];
                     while ($row = $result->fetch_assoc()) {
                         $tid = (int)$row['testing_id'];
-                        if (!isset($data[$tid])) $data[$tid] = ['meta' => ['project_name' => $row['project_name'], 'project_title' => $row['project_title'], 'testing_name' => $row['testing_name'], 'testing_method' => $row['testing_method'], 'checked_by_engineer' => (int)$row['checked_by_engineer']], 'fields' => [], 'rows' => []];
+                        if (!isset($data[$tid])) $data[$tid] = [
+                            'meta' => [
+                                'project_name'   => $row['project_name'],
+                                'project_title'  => $row['project_title'],
+                                'testing_name'   => $row['testing_name'],
+                                'testing_method' => $row['testing_method'],
+                                'checked_t1'     => (int)($row['checked_by_engineer_t1'] ?? 0),
+                                'checked_t2'     => (int)($row['checked_by_engineer_t2'] ?? 0),
+                                'created_by'     => $row['created_by'] ?? null,
+                            ],
+                            'fields' => [],
+                            'rows'   => ['t1' => [], 't2' => []],
+                            'edited_by' => ['t1' => null, 't2' => null],
+                        ];
                         $d = (int)$row['display_order'];
                         if (!isset($data[$tid]['fields'][$d])) $data[$tid]['fields'][$d] = ['field_name' => $row['field_name'], 'field_key' => (int)$row['field_key'], 'value_type' => $row['value_type']];
-                        $rn = $row['row_number'];
+                        $rn  = $row['row_number'];
+                        $tbl = (int)($row['table_number'] ?? 1);
+                        $tk  = $tbl === 2 ? 't2' : 't1';
                         if ($rn !== null) {
                             $rn = (int)$rn;
-                            if (!isset($data[$tid]['rows'][$rn])) $data[$tid]['rows'][$rn] = [];
-                            $data[$tid]['rows'][$rn][$d] = $row['record_value'];
+                            if (!isset($data[$tid]['rows'][$tk][$rn])) $data[$tid]['rows'][$tk][$rn] = [];
+                            $data[$tid]['rows'][$tk][$rn][$d] = $row['record_value'];
+                            // Track edited_by for this table (set once from any row)
+                            if ($data[$tid]['edited_by'][$tk] === null && isset($row['edited_by'])) {
+                                $data[$tid]['edited_by'][$tk] = $row['edited_by'];
+                            }
                         }
                     }
                     if (empty($data)) {
@@ -2010,7 +2083,8 @@ function getAvgClass($a)
                         $seq = $renderSeq++; // unique per rendered card, even if same tid
                         $meta = $entry['meta'];
                         ksort($entry['fields']);
-                        ksort($entry['rows']);
+                        ksort($entry['rows']['t1']);
+                        ksort($entry['rows']['t2']);
                         $tO = [];
                         $nO = [];
                         foreach ($entry['fields'] as $d => $f) {
@@ -2028,10 +2102,15 @@ function getAvgClass($a)
                         echo "<div style='flex:1;min-width:0;'>";
                         echo "<div style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;'>";
                         echo "<h3 style='margin:0;font-size:16px;'>" . htmlspecialchars($meta['project_name']) . " — " . htmlspecialchars($meta['project_title']) . "</h3>";
-                        // Engineer check badge (read-only for all roles in viewer)
-                        $engChecked = (int)($meta['checked_by_engineer'] ?? 0);
-                        if ($engChecked) {
-                            echo "<span class='eng-check-badge verified'><i class='fas fa-user-check'></i> Engineer Verified</span>";
+                        // Engineer check badge
+                        $engT1 = (int)($meta['checked_t1'] ?? 0);
+                        $engT2 = (int)($meta['checked_t2'] ?? 0);
+                        if ($engT1 || $engT2) {
+                            $verifiedLabel = 'Engineer Verified';
+                            if ($engT1 && $engT2) $verifiedLabel .= ' (T1+T2)';
+                            elseif ($engT1) $verifiedLabel .= ' (T1)';
+                            else $verifiedLabel .= ' (T2)';
+                            echo "<span class='eng-check-badge verified'><i class='fas fa-user-check'></i> $verifiedLabel</span>";
                         } else {
                             echo "<span class='eng-check-badge unverified'><i class='fas fa-user-clock'></i> Not Verified</span>";
                         }
@@ -2039,56 +2118,49 @@ function getAvgClass($a)
                         echo "<p class='text-muted-sm' style='margin:2px 0 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;'><span><i class='fas fa-tag' style='color:#6B8DB5;'></i> " . htmlspecialchars($meta['testing_name']) . "</span><span style='color:#CBD5E0;'>|</span><span><i class='fas fa-microscope' style='color:#C1A0D8;'></i> " . htmlspecialchars($meta['testing_method']) . "</span></p>";
                         echo "</div></div>";
 
-                        echo "<div class='overflow-x' style='margin-top:16px;'><table><thead><tr>";
-                        foreach ($tO as $d) echo "<th>" . htmlspecialchars($entry['fields'][$d]['field_name']) . "</th>";
-                        echo "<th style='text-align:center;'><i class='fas fa-calculator'></i> Average</th>";
-                        foreach ($nO as $d) echo "<th>" . htmlspecialchars($entry['fields'][$d]['field_name']) . "</th>";
-                        echo "</tr></thead><tbody>";
-
-                        if (empty($entry['rows'])) {
-                            echo "<tr>";
-                            foreach ($tO as $d) echo "<td>—</td>";
-                            echo "<td class='avg-cell avg-na'>N/A</td>";
-                            foreach ($nO as $d) echo "<td>—</td>";
-                            echo "</tr>";
-                        } else {
-                            foreach ($entry['rows'] as $rn => $rd) {
-                                echo "<tr>";
-                                foreach ($tO as $d) {
-                                    $v = $rd[$d] ?? null;
-                                    echo "<td>" . (($v === null || $v === '') ? '—' : htmlspecialchars($v)) . "</td>";
-                                }
-                                $nv = [];
-                                foreach ($nO as $d) {
-                                    $v = $rd[$d] ?? null;
-                                    if ($v !== null && $v !== '') {
-                                        $fv = (float)$v;
-                                        if ($fv >= 0) $nv[] = $fv;
-                                    }
-                                }
-                                if (count($nv) > 0) {
-                                    $avg = array_sum($nv) / count($nv);
-                                    $cls = getAvgClass($avg);
-                                    echo "<td class='avg-cell $cls'>" . number_format(max(0, $avg), 3) . "</td>";
-                                } else echo "<td class='avg-cell avg-na'>N/A</td>";
-                                foreach ($nO as $d) {
-                                    $v = $rd[$d] ?? null;
-                                    echo "<td>" . (($v === null || $v === '') ? '—' : htmlspecialchars($v)) . "</td>";
-                                }
-                                echo "</tr>";
-                            }
-                        }
-                        echo "</tbody></table></div>";
-
-                        // ── Section visibility toggle bar — IDs scoped by $seq ──
+                        // IDs for collapsible sections
+                        $t1Id = "sec_t1_{$seq}";
+                        $t2Id = "sec_t2_{$seq}";
                         $mId  = "sec_media_{$seq}";
                         $dId  = "sec_desc_{$seq}";
-                        $rId  = "sec_radar_{$seq}";
+                        $r1Id = "sec_radar1_{$seq}";
+                        $r2Id = "sec_radar2_{$seq}";
+                        $hasT2 = !empty($entry['rows']['t2']);
+
+                        // Table 1 section
+                        $t1EditedBy = $entry['edited_by']['t1'];
+                        $t1Label = 'Record Data — Table 1';
+                        if ($t1EditedBy) $t1Label .= ' (edited by: ' . htmlspecialchars($t1EditedBy) . ')';
+                        elseif ($entry['meta']['created_by']) $t1Label .= ' (created by: ' . htmlspecialchars($entry['meta']['created_by']) . ')';
+                        echo "<div id='$t1Id' class='collapsible-section'>";
+                        echo "<p style='margin-top:18px;font-weight:700;font-size:13px;color:#4A5568;display:flex;align-items:center;gap:8px;'><i class='fas fa-table' style='color:#6B8DB5;'></i> " . $t1Label . "</p>";
+                        renderDataTable($entry, 't1', $tO, $nO);
+                        echo "</div>";
+
+                        // Table 2 section
+                        echo "<div id='$t2Id' class='collapsible-section'" . ($hasT2 ? '' : " style='display:none;'") . ">";
+                        if ($hasT2) {
+                            $t2EditedBy = $entry['edited_by']['t2'];
+                            $t2Label = 'Record Data — Table 2';
+                            if ($t2EditedBy) $t2Label .= ' (edited by: ' . htmlspecialchars($t2EditedBy) . ')';
+                            echo "<p style='margin-top:18px;font-weight:700;font-size:13px;color:#4A5568;display:flex;align-items:center;gap:8px;'><i class='fas fa-table' style='color:#C1A0D8;'></i> " . $t2Label . "</p>";
+                            renderDataTable($entry, 't2', $tO, $nO);
+                        }
+                        echo "</div>";
+
+                        // Section visibility toggle bar
                         echo "<div class='section-toggle-bar'>";
                         echo "<span><i class='fas fa-eye' style='margin-right:4px;'></i> Show</span>";
+                        echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$t1Id',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-table' style='font-size:11px;margin-right:2px;color:#6B8DB5;'></i> Table 1</label>";
+                        if ($hasT2) {
+                            echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$t2Id',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-table' style='font-size:11px;margin-right:2px;color:#C1A0D8;'></i> Table 2</label>";
+                        }
                         echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$mId',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-images' style='font-size:11px;margin-right:2px;'></i> Media</label>";
                         echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$dId',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-align-left' style='font-size:11px;margin-right:2px;'></i> Description</label>";
-                        echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$rId',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-chart-area' style='font-size:11px;margin-right:2px;'></i> Performance Radar</label>";
+                        echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$r1Id',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-chart-area' style='font-size:11px;margin-right:2px;color:#6B8DB5;'></i> Radar T1</label>";
+                        if ($hasT2) {
+                            echo "<label class='toggle-check'><input type='checkbox' checked onchange=\"toggleSection('$r2Id',this.checked)\"><div class='chk-box'><i class='fas fa-check'></i></div><i class='fas fa-chart-area' style='font-size:11px;margin-right:2px;color:#C1A0D8;'></i> Radar T2</label>";
+                        }
                         echo "</div>";
 
                         echo "<div id='$mId' class='collapsible-section'>";
@@ -2099,8 +2171,14 @@ function getAvgClass($a)
                         displayDescriptions($conn, $tid);
                         echo "</div>";
 
-                        echo "<div id='$rId' class='collapsible-section'>";
-                        displayRadarCharts($seq, $entry['fields'], $entry['rows'], $nO);
+                        echo "<div id='$r1Id' class='collapsible-section'>";
+                        displayRadarCharts($seq . '_t1', $entry['fields'], $entry['rows']['t1'], $nO, 'Performance Radar (Table 1)', '#6B8DB5');
+                        echo "</div>";
+
+                        echo "<div id='$r2Id' class='collapsible-section'" . ($hasT2 ? '' : " style='display:none;'") . ">";
+                        if ($hasT2) {
+                            displayRadarCharts($seq . '_t2', $entry['fields'], $entry['rows']['t2'], $nO, 'Performance Radar (Table 2)', '#C1A0D8');
+                        }
                         echo "</div>";
 
                         echo "</div>";
@@ -2131,7 +2209,8 @@ function getAvgClass($a)
                             $fn = htmlspecialchars($m['file_name']);
                             $mt = $m['mime_type'] ?? '';
                             if (str_starts_with($mt, "image/")) {
-                                echo "<a href='$url' target='_blank'><img src='$url' width='150' alt='$fn'></a>";
+                                $compareUrl = "media_compare.php?media_id=" . (int)$m['media_id'];
+                                echo "<a href='$compareUrl'><div class='media-thumb-square'><img src='$url' alt='$fn'></div></a>";
                             } else {
                                 echo "<a href='$url' target='_blank' class='btn btn-sm btn-secondary'><i class='fas fa-file'></i> $fn</a>";
                             }
@@ -2151,7 +2230,7 @@ function getAvgClass($a)
                     while ($d = $r->fetch_assoc()) echo "<div class='desc-card'><pre style='margin:0;border:none;background:none;padding:0;'>" . htmlspecialchars($d['content']) . "</pre></div>";
                 }
 
-                function displayRadarCharts($seq, $fields, $rows, $nO)
+                function displayRadarCharts($seq, $fields, $rows, $nO, $title = 'Performance Radar', $color = '#6B8DB5')
                 {
                     if (empty($rows) || empty($nO)) return;
 
@@ -2175,8 +2254,13 @@ function getAvgClass($a)
                     // Round up to nearest 0.5 for a clean scale
                     $scale = $globalMax > 0 ? ceil($globalMax * 2) / 2 : 5;
 
+                    if ($color === '#C1A0D8') {
+                        $bgColor = 'rgba(193,160,216,0.15)'; $borderColor = 'rgba(193,160,216,0.75)'; $pointColor = 'rgba(193,160,216,1)';
+                    } else {
+                        $bgColor = 'rgba(107,141,181,0.15)'; $borderColor = 'rgba(107,141,181,0.75)'; $pointColor = 'rgba(107,141,181,1)';
+                    }
                     echo "<p style='margin-top:18px;font-weight:700;font-size:13px;color:#4A5568;display:flex;align-items:center;gap:8px;'>"
-                        . "<i class='fas fa-chart-area' style='color:#6B8DB5;'></i> Performance Radar</p>";
+                        . "<i class='fas fa-chart-area' style='color:" . htmlspecialchars($color) . ";'></i> " . htmlspecialchars($title) . "</p>";
                     echo "<div class='radar-grid'>";
 
                     foreach ($rows as $rn => $rd) {
@@ -2226,10 +2310,10 @@ function getAvgClass($a)
             labels: $labelsJson,
             datasets: [{
                 data: $valuesJson,
-                backgroundColor: 'rgba(107,141,181,0.15)',
-                borderColor: 'rgba(107,141,181,0.75)',
+                backgroundColor: '$bgColor',
+                borderColor: '$borderColor',
                 borderWidth: 2,
-                pointBackgroundColor: 'rgba(107,141,181,1)',
+                pointBackgroundColor: '$pointColor',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 1.5,
                 pointRadius: 3.5,
@@ -2330,6 +2414,17 @@ function getAvgClass($a)
             } else {
                 el.classList.add('hidden');
             }
+        }
+
+        function toggleRow(btn) {
+            var tr = btn.closest('tr');
+            if (!tr) return;
+            tr.classList.toggle('row-hidden');
+            var icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = tr.classList.contains('row-hidden') ? 'fas fa-eye-slash' : 'fas fa-eye';
+            }
+            btn.title = tr.classList.contains('row-hidden') ? 'Show row' : 'Hide row';
         }
 
         // ── Radar Lightbox ────────────────────────────

@@ -19,6 +19,7 @@ $initials = strtoupper(substr($user, 0, 2));
         <div class="nav-label">Main</div>
         <?php if (in_array($role, ['VIEWER', 'EDITOR', 'DEVELOPER'])): ?>
             <a href="viewer.php" class="<?= $currentPage === 'viewer.php' ? 'active' : '' ?>"><i class="fas fa-eye"></i><span>View Records</span></a>
+            <a href="media_compare.php" class="<?= $currentPage === 'media_compare.php' ? 'active' : '' ?>"><i class="fas fa-images"></i><span>Media Compare</span></a>
         <?php endif; ?>
         <?php if (in_array($role, ['EDITOR', 'DEVELOPER'])): ?>
             <a href="editor.php" class="<?= $currentPage === 'editor.php' ? 'active' : '' ?>"><i class="fas fa-pen-to-square"></i><span>Insert / Edit</span></a>

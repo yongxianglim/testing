@@ -2202,7 +2202,6 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
             }
         }
     </style>
-    </style>
     <title>Media &amp; Descriptions — Subjective Portal</title>
 </head>
 

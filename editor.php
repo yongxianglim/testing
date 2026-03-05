@@ -601,6 +601,10 @@ if ($editTid) {
             $editRowsOther[$rn][(int)$r['field_key']] = $r['record_value'];
         }
         ksort($editRowsOther);
+        // When Editor B first opens (Table 2 is empty), pre-populate with Table 1 data
+        if (!$isOwner && empty($editRows) && !empty($editRowsOther)) {
+            $editRows = $editRowsOther;
+        }
         // Get edited_by for both tables
         $ebRes1 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=1 LIMIT 1");
         $ebRow1 = $ebRes1 ? $ebRes1->fetch_assoc() : null;
@@ -1078,6 +1082,7 @@ function splitProjectTitle($pt)
             padding: 26px;
             margin-bottom: 22px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            overflow: visible;
         }
 
         .card h2 {
@@ -1979,6 +1984,28 @@ function splitProjectTitle($pt)
             color: #4A5568;
         }
 
+        .pending-desc-edit {
+            flex: 1;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #4A5568;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1.5px solid rgba(107, 141, 181, 0.15);
+            border-radius: 8px;
+            padding: 8px 10px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .pending-desc-edit:focus {
+            border-color: rgba(107, 141, 181, 0.4);
+            box-shadow: 0 0 0 3px rgba(107, 141, 181, 0.09);
+        }
+
         .pending-desc-remove {
             background: none;
             border: none;
@@ -2403,7 +2430,7 @@ function splitProjectTitle($pt)
             top: calc(100% + 5px);
             left: 0;
             right: 0;
-            z-index: 800;
+            z-index: 9999;
             background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
@@ -4495,6 +4522,11 @@ function splitProjectTitle($pt)
             renderDescQueue();
         }
 
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
         function renderDescQueue() {
             var list = document.getElementById('pendingDescsList');
             var btn = document.getElementById('btnAddDescs');
@@ -4503,8 +4535,17 @@ function splitProjectTitle($pt)
             descQueue.forEach(function(text, idx) {
                 var item = document.createElement('div');
                 item.className = 'pending-desc-item';
-                var pre = document.createElement('pre');
-                pre.textContent = text;
+                var ta = document.createElement('textarea');
+                ta.className = 'pending-desc-edit';
+                ta.value = text;
+                ta.rows = 2;
+                ta.oninput = (function(i) {
+                    return function() {
+                        descQueue[i] = this.value;
+                        autoResizeTextarea(this);
+                    };
+                })(idx);
+                setTimeout(function() { autoResizeTextarea(ta); }, 0);
                 var rmBtn = document.createElement('button');
                 rmBtn.type = 'button';
                 rmBtn.className = 'pending-desc-remove';
@@ -4516,7 +4557,7 @@ function splitProjectTitle($pt)
                         renderDescQueue();
                     };
                 })(idx);
-                item.appendChild(pre);
+                item.appendChild(ta);
                 item.appendChild(rmBtn);
                 list.appendChild(item);
             });

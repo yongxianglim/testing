@@ -80,6 +80,43 @@ $conn->close();
             flex-direction:column; position:sticky; top:0; height:100vh;
             overflow-y:auto; z-index:100; transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);
         }
+        .sidebar-header { padding:22px 18px 18px; border-bottom:1px solid rgba(107,141,181,0.1); }
+        .brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+        .brand-icon {
+            width:42px; height:42px; background:linear-gradient(135deg,#6B8DB5,#8BB3D9);
+            border-radius:13px; display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:18px; box-shadow:0 4px 14px rgba(107,141,181,0.28); flex-shrink:0;
+        }
+        .brand-text { font-size:15px; font-weight:800; color:#2D3748; letter-spacing:-0.3px; line-height:1.2; }
+        .brand-sub { font-size:11px; color:#A0AEC0; font-weight:500; }
+        .sidebar-nav { flex:1; padding:14px 12px; display:flex; flex-direction:column; gap:2px; }
+        .nav-label { font-size:10px; font-weight:700; color:#CBD5E0; letter-spacing:1.5px; text-transform:uppercase; padding:12px 10px 4px; }
+        .sidebar-nav a {
+            display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:13px;
+            color:#718096; font-size:13.5px; font-weight:500; text-decoration:none; transition:all 0.22s;
+        }
+        .sidebar-nav a i { width:18px; text-align:center; font-size:14px; flex-shrink:0; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background:rgba(107,141,181,0.1); color:#4A7BA8; }
+        .sidebar-nav a.active { font-weight:700; }
+        .sidebar-footer { padding:14px 12px 18px; border-top:1px solid rgba(107,141,181,0.08); }
+        .sidebar-user {
+            display:flex; align-items:center; gap:10px; padding:12px;
+            background:rgba(107,141,181,0.07); border-radius:14px; margin-bottom:10px;
+        }
+        .user-avatar {
+            width:38px; height:38px; background:linear-gradient(135deg,#C1A0D8,#8BB3D9);
+            border-radius:11px; display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:13px; font-weight:700; flex-shrink:0;
+        }
+        .user-details { flex:1; overflow:hidden; }
+        .user-name { font-size:13px; font-weight:700; color:#2D3748; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .user-role { font-size:11px; color:#A0AEC0; font-weight:500; }
+        .sidebar-logout {
+            display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:12px;
+            color:#D07070; font-size:13px; font-weight:600; text-decoration:none;
+            transition:all 0.22s; border:1px solid rgba(208,112,112,0.15);
+        }
+        .sidebar-logout:hover { background:rgba(208,112,112,0.08); }
         .main-content { flex:1; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
         .main-header {
             background:rgba(255,255,255,0.45); backdrop-filter:blur(20px);
@@ -157,14 +194,14 @@ $conn->close();
             background:rgba(107,141,181,0.04);
         }
         .slot-image-area img {
-            width:100%; height:100%; object-fit:cover; display:block;
-            transition:transform 0.3s ease;
+            width:100%; height:100%; object-fit:contain; display:block;
+            transition:transform 0.3s ease; background:rgba(107,141,181,0.04);
         }
         .slot-image-area:hover img { transform:scale(1.04); }
         .slot-no-image {
             width:100%; height:100%; display:flex; align-items:center;
             justify-content:center; flex-direction:column; gap:8px;
-            color:#CBD5E0; font-size:13px;
+            color:#CBD5E0; font-size:13px; cursor:pointer;
         }
         .slot-no-image i { font-size:32px; }
         .slot-info { padding:12px 14px; }
@@ -286,7 +323,7 @@ $conn->close();
                                 <span class="slot-num">Slot <?= $s ?></span>
                                 <button class="slot-clear-btn" onclick="clearSlot(<?= $s ?>)" title="Clear"><i class="fas fa-times"></i></button>
                             </div>
-                            <div class="slot-image-area" id="slotImg<?= $s ?>">
+                            <div class="slot-image-area" id="slotImg<?= $s ?>" onclick="openSlotMediaPicker(<?= $s ?>)">
                                 <div class="slot-no-image"><i class="fas fa-image"></i><span>No media selected</span></div>
                             </div>
                             <div class="slot-info" id="slotInfo<?= $s ?>">
@@ -365,6 +402,12 @@ $conn->close();
 
     function findMedia(mediaId) {
         return ALL_MEDIA.find(function(m) { return m.media_id === mediaId; });
+    }
+
+    function openSlotMediaPicker(slot) {
+        if (slotMedia[slot]) return; // only trigger when no media is selected
+        var inp = document.getElementById('slotSearch' + slot);
+        if (inp) { inp.focus(); }
     }
 
     function clearSlot(slot) {

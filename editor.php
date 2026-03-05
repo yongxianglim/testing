@@ -32,8 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($c->get_result()->num_rows > 0) $errors[] = "Duplicate testing record exists.";
         }
         if (empty($errors)) {
-            $s = $conn->prepare("INSERT INTO testing (project_name,project_title,testing_name,testing_method) VALUES (?,?,?,?)");
-            $s->bind_param("ssss", $pn, $pt, $tn, $tm);
+            $createdBy = $_SESSION['username'] ?? null;
+            $s = $conn->prepare("INSERT INTO testing (project_name,project_title,testing_name,testing_method,created_by) VALUES (?,?,?,?,?)");
+            $s->bind_param("sssss", $pn, $pt, $tn, $tm, $createdBy);
             $s->execute();
             $nid = $conn->insert_id;
             $mf  = $conn->query("SELECT master_field_id,field_name,value_type FROM master_fields ORDER BY master_field_id");
@@ -78,21 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msgType = 'error';
         }
 
-        // ── Update Checked by Engineer ────────────────────────────
-    } elseif ($action === 'update_engineer_check') {
-        $tid     = (int)($_POST['testing_id'] ?? 0);
-        $checked = isset($_POST['checked_by_engineer']) ? 1 : 0;
-        if (!$tid) {
-            $msg = "Invalid ID.";
-            $msgType = 'error';
-        } else {
-            $s = $conn->prepare("UPDATE testing SET checked_by_engineer=? WHERE testing_id=?");
-            $s->bind_param("ii", $checked, $tid);
-            $s->execute();
-            $msg     = "Engineer check status updated.";
-            $msgType = 'success';
-        }
-
         // ── Save Records ──────────────────────────────────────────
     } elseif ($action === 'save_records') {
         $tid  = (int)($_POST['testing_id'] ?? 0);
@@ -115,12 +101,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if (empty($errors)) {
                 $cnt = 0;
+                $ownerRowSR = $conn->query("SELECT created_by FROM testing WHERE testing_id=$tid")->fetch_assoc();
+                $tableNum = ($ownerRowSR && $ownerRowSR['created_by'] === ($_SESSION['username'] ?? '')) ? 1 : 2;
+                $editedBy = $_SESSION['username'] ?? null;
                 for ($rn = 1; $rn <= $nr; $rn++) {
                     foreach ($fds as $fk => $df) {
                         $v  = trim($recs[$rn][$fk] ?? '');
                         $sv = ($v === '') ? null : $v;
-                        $s  = $conn->prepare("INSERT INTO testing_record (testing_id,field_key,row_number,record_value) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE record_value=VALUES(record_value)");
-                        $s->bind_param("iiis", $tid, $fk, $rn, $sv);
+                        $s  = $conn->prepare("INSERT INTO testing_record (testing_id,field_key,row_number,table_number,record_value,edited_by) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE record_value=VALUES(record_value),edited_by=VALUES(edited_by)");
+                        $s->bind_param("iiiiss", $tid, $fk, $rn, $tableNum, $sv, $editedBy);
                         $s->execute();
                         $cnt++;
                     }
@@ -144,9 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = "Invalid parameters.";
             $msgType = 'error';
         } else {
-            $conn->query("DELETE FROM testing_record WHERE testing_id=$tid AND row_number=$rn");
+            $ownerRow = $conn->query("SELECT created_by FROM testing WHERE testing_id=$tid")->fetch_assoc();
+            $tableNum = ($ownerRow && $ownerRow['created_by'] === ($_SESSION['username'] ?? '')) ? 1 : 2;
+            $conn->query("DELETE FROM testing_record WHERE testing_id=$tid AND row_number=$rn AND table_number=$tableNum");
             // Re-number subsequent rows down by 1
-            $conn->query("UPDATE testing_record SET row_number = row_number - 1 WHERE testing_id=$tid AND row_number > $rn");
+            $conn->query("UPDATE testing_record SET row_number = row_number - 1 WHERE testing_id=$tid AND row_number > $rn AND table_number=$tableNum");
             $msg     = "Row $rn deleted.";
             $msgType = 'success';
         }
@@ -309,6 +300,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msgType = 'success';
         }
 
+        // ── Rename Media File ─────────────────────────────────────
+    } elseif ($action === 'rename_media_file') {
+        $mid     = (int)($_POST['media_id'] ?? 0);
+        $newName = trim($_POST['new_file_name'] ?? '');
+        if (!$mid || $newName === '') {
+            $msg = "Invalid parameters.";
+            $msgType = 'error';
+        } else {
+            $s = $conn->prepare("UPDATE media_files SET file_name=? WHERE media_id=?");
+            $s->bind_param("si", $newName, $mid);
+            $s->execute();
+            $msg = "File name updated.";
+            $msgType = 'success';
+        }
+
         // ── Add Description (batch) ───────────────────────────────
     } elseif ($action === 'add_descriptions') {
         $tid    = (int)($_POST['testing_id'] ?? 0);
@@ -394,12 +400,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if (empty($recErrors)) {
                     $cnt = 0;
+                    $ownerRowSA = $conn->query("SELECT created_by FROM testing WHERE testing_id=$tid")->fetch_assoc();
+                    $tableNumSA = ($ownerRowSA && $ownerRowSA['created_by'] === ($_SESSION['username'] ?? '')) ? 1 : 2;
+                    $editedBySA = $_SESSION['username'] ?? null;
                     for ($rn = 1; $rn <= $nr; $rn++) {
                         foreach ($fds2 as $fk => $df) {
                             $v  = trim($recs[$rn][$fk] ?? '');
                             $sv = ($v === '') ? null : $v;
-                            $s  = $conn->prepare("INSERT INTO testing_record (testing_id,field_key,row_number,record_value) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE record_value=VALUES(record_value)");
-                            $s->bind_param("iiis", $tid, $fk, $rn, $sv);
+                            $s  = $conn->prepare("INSERT INTO testing_record (testing_id,field_key,row_number,table_number,record_value,edited_by) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE record_value=VALUES(record_value),edited_by=VALUES(edited_by)");
+                            $s->bind_param("iiiiss", $tid, $fk, $rn, $tableNumSA, $sv, $editedBySA);
                             $s->execute();
                             $cnt++;
                         }
@@ -548,12 +557,18 @@ $mfQ        = $conn->query("SELECT master_field_id,field_name,value_type FROM ma
 $mfArr      = [];
 while ($m = $mfQ->fetch_assoc()) $mfArr[] = $m;
 
-$editData   = null;
-$editFields = [];
-$editRows   = [];
-$editMedia  = [];
-$editDesc   = [];
-$editCFK    = [];
+$editData       = null;
+$editFields     = [];
+$editRows       = [];
+$editRowsOther  = [];
+$editedByT1     = null;
+$editedByT2     = null;
+$myTableNum     = 1;
+$otherTableNum  = 2;
+$isOwner        = true;
+$editMedia      = [];
+$editDesc       = [];
+$editCFK        = [];
 if ($editTid) {
     $s = $conn->prepare("SELECT * FROM testing WHERE testing_id=?");
     $s->bind_param("i", $editTid);
@@ -565,13 +580,32 @@ if ($editTid) {
             $editFields[] = $f;
             $editCFK[] = (int)$f['field_key'];
         }
-        $rr = $conn->query("SELECT field_key,row_number,record_value FROM testing_record WHERE testing_id=$editTid ORDER BY row_number,field_key");
+        $currentUsername = $_SESSION['username'] ?? '';
+        $isOwner = ($editData['created_by'] === $currentUsername);
+        $myTableNum = $isOwner ? 1 : 2;
+        // For editor's table
+        $rr = $conn->query("SELECT field_key,row_number,record_value FROM testing_record WHERE testing_id=$editTid AND table_number=$myTableNum ORDER BY row_number,field_key");
         while ($r = $rr->fetch_assoc()) {
             $rn = (int)$r['row_number'];
             if (!isset($editRows[$rn])) $editRows[$rn] = [];
             $editRows[$rn][(int)$r['field_key']] = $r['record_value'];
         }
         ksort($editRows);
+        // Also fetch the other table's rows (read-only view)
+        $otherTableNum = $isOwner ? 2 : 1;
+        $editRowsOther = [];
+        $rrOther = $conn->query("SELECT field_key,row_number,record_value FROM testing_record WHERE testing_id=$editTid AND table_number=$otherTableNum ORDER BY row_number,field_key");
+        while ($r = $rrOther->fetch_assoc()) {
+            $rn = (int)$r['row_number'];
+            if (!isset($editRowsOther[$rn])) $editRowsOther[$rn] = [];
+            $editRowsOther[$rn][(int)$r['field_key']] = $r['record_value'];
+        }
+        ksort($editRowsOther);
+        // Get edited_by for both tables
+        $ebRow1 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=1 LIMIT 1")->fetch_assoc();
+        $ebRow2 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=2 LIMIT 1")->fetch_assoc();
+        $editedByT1 = $ebRow1['edited_by'] ?? null;
+        $editedByT2 = $ebRow2['edited_by'] ?? null;
         $mr = $conn->query("SELECT media_id,group_name,file_name,mime_type FROM media_files WHERE testing_id=$editTid ORDER BY ISNULL(group_name), group_name, created_at");
         while ($m = $mr->fetch_assoc()) $editMedia[] = $m;
         $dr = $conn->query("SELECT description_id,content FROM testing_description WHERE testing_id=$editTid ORDER BY created_at");
@@ -2649,31 +2683,14 @@ function splitProjectTitle($pt)
                 <?php endif; ?>
 
                 <?php if ($editData):
-                    $checked = (int)($editData['checked_by_engineer'] ?? 0);
+                    $checkedT1 = (int)($editData['checked_by_engineer_t1'] ?? 0);
+                    $checkedT2 = (int)($editData['checked_by_engineer_t2'] ?? 0);
                     $ptParts = splitProjectTitle($editData['project_title']);
                 ?>
 
                     <!-- ── META ──────────────────────────────────── -->
                     <div class="card">
                         <h2><i class="fas fa-info-circle"></i> Edit Meta — Testing #<?= $editTid ?></h2>
-
-                        <!-- Engineer Check -->
-                        <form method="POST" id="fEC" style="margin-bottom:18px;">
-                            <input type="hidden" name="action" value="update_engineer_check">
-                            <input type="hidden" name="testing_id" value="<?= $editTid ?>">
-                            <div class="engineer-check-row <?= $checked ? '' : 'unchecked' ?>" id="engCheckRow">
-                                <label for="cbEngineer">
-                                    <input type="checkbox" name="checked_by_engineer" id="cbEngineer"
-                                        <?= $checked ? 'checked' : '' ?>
-                                        onchange="document.getElementById('engCheckRow').className='engineer-check-row'+(this.checked?'':' unchecked'); confirmSubmit('fEC','confirm','Update Status','Update engineer check status?')">
-                                    <i class="fas fa-user-check" style="color:inherit;"></i>
-                                    Checked by Engineer
-                                </label>
-                                <span style="font-size:12px;color:inherit;opacity:0.7;">
-                                    <?= $checked ? 'Verified ✓' : 'Not yet verified' ?>
-                                </span>
-                            </div>
-                        </form>
 
                         <form method="POST" id="fUM">
                             <input type="hidden" name="action" value="update_meta">
@@ -2749,6 +2766,35 @@ function splitProjectTitle($pt)
                     <!-- ── RECORDS ────────────────────────────────── -->
                     <div class="card">
                         <h2><i class="fas fa-table"></i> Record Data — Testing #<?= $editTid ?></h2>
+                        <!-- Engineer Check for Table 1 (inline, AJAX) -->
+                        <div class="engineer-check-inline" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+                            <div class="engineer-check-row <?= $checkedT1 ? '' : 'unchecked' ?>" id="engCheckRowT1" style="flex-shrink:0;">
+                                <label for="cbEngineerT1" style="cursor:pointer;">
+                                    <input type="checkbox" id="cbEngineerT1"
+                                        <?= $checkedT1 ? 'checked' : '' ?>
+                                        onchange="ajaxEngineerCheck(1,this.checked)">
+                                    <i class="fas fa-user-check" style="color:inherit;"></i>
+                                    Table 1 — Checked by Engineer
+                                </label>
+                                <span style="font-size:12px;color:inherit;opacity:0.7;" id="engLabelT1">
+                                    <?= $checkedT1 ? 'Verified ✓' : 'Not yet verified' ?>
+                                </span>
+                            </div>
+                            <?php if (!empty($editRowsOther)): ?>
+                            <div class="engineer-check-row <?= $checkedT2 ? '' : 'unchecked' ?>" id="engCheckRowT2" style="flex-shrink:0;">
+                                <label for="cbEngineerT2" style="cursor:pointer;">
+                                    <input type="checkbox" id="cbEngineerT2"
+                                        <?= $checkedT2 ? 'checked' : '' ?>
+                                        onchange="ajaxEngineerCheck(2,this.checked)">
+                                    <i class="fas fa-user-check" style="color:inherit;"></i>
+                                    Table 2 — Checked by Engineer
+                                </label>
+                                <span style="font-size:12px;color:inherit;opacity:0.7;" id="engLabelT2">
+                                    <?= $checkedT2 ? 'Verified ✓' : 'Not yet verified' ?>
+                                </span>
+                            </div>
+                            <?php endif; ?>
+                        </div>
                         <?php if (empty($editFields)): ?>
                             <div class="empty-state"><i class="fas fa-table-columns"></i>
                                 <p>No fields configured yet.</p>
@@ -2953,6 +2999,55 @@ function splitProjectTitle($pt)
                                 }
                             </script>
                         <?php endif; ?>
+                        <?php if (!empty($editRowsOther)): 
+                            $otherLabel = $isOwner ? 'Table 2 (edited by: ' . htmlspecialchars($editedByT2 ?? 'Unknown') . ')' : 'Table 1 (created by: ' . htmlspecialchars($editData['created_by'] ?? 'Unknown') . ')';
+                        ?>
+                        <h3 style="margin-top:22px;font-size:14px;font-weight:700;color:#4A5568;display:flex;align-items:center;gap:8px;">
+                            <i class="fas fa-table" style="color:#C1A0D8;"></i> Record Data — <?= $otherLabel ?> <span style="font-size:11px;font-weight:500;color:#A0AEC0;">(Read-only)</span>
+                        </h3>
+                        <div class="overflow-x" style="margin-top:10px;opacity:0.85;">
+                            <table>
+                                <thead><tr>
+                                    <th style="width:40px;">#</th>
+                                    <?php foreach ($editFields as $fd): ?><th><?= htmlspecialchars($fd['field_name']) ?></th><?php endforeach; ?>
+                                    <th style="text-align:center;"><i class="fas fa-calculator"></i> Avg</th>
+                                </tr></thead>
+                                <tbody>
+                                <?php if (empty($editRowsOther)): ?>
+                                    <tr><td colspan="<?= count($editFields) + 2 ?>" style="text-align:center;color:#A0AEC0;padding:16px;">No data</td></tr>
+                                <?php else:
+                                    $ri2 = 0;
+                                    foreach ($editRowsOther as $rn2 => $rd2):
+                                        $ri2++;
+                                        $nv2 = [];
+                                        foreach ($editFields as $fd2) {
+                                            if ($fd2['value_type'] !== 'text') {
+                                                $v2 = $rd2[(int)$fd2['field_key']] ?? '';
+                                                if ($v2 !== '' && is_numeric($v2) && (float)$v2 >= 0) $nv2[] = (float)$v2;
+                                            }
+                                        }
+                                        $avg2 = count($nv2) > 0 ? array_sum($nv2) / count($nv2) : null;
+                                        $cls2 = getAvgClass($avg2);
+                                ?>
+                                    <tr>
+                                        <td style="text-align:center;color:#A0AEC0;font-weight:700;"><?= $ri2 ?></td>
+                                        <?php foreach ($editFields as $fd2):
+                                            $fk2 = (int)$fd2['field_key'];
+                                            $v2 = htmlspecialchars($rd2[$fk2] ?? '');
+                                        ?>
+                                            <td style="color:#4A5568;"><?= $v2 !== '' ? $v2 : '—' ?></td>
+                                        <?php endforeach; ?>
+                                        <?php if ($avg2 !== null): ?>
+                                            <td class="avg-cell <?= $cls2 ?>"><?= number_format(max(0,$avg2),3) ?></td>
+                                        <?php else: ?>
+                                            <td class="avg-cell avg-na">N/A</td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- ── MEDIA ──────────────────────────────────── -->
@@ -3050,7 +3145,26 @@ function splitProjectTitle($pt)
                                                             if (str_starts_with($mt, "image/")) echo "<a href='$url' target='_blank'><img src='$url' width='100' style='border-radius:12px;'></a>";
                                                             else echo "<a href='$url' target='_blank' class='btn btn-sm btn-secondary'><i class='fas fa-file'></i> View</a>";
                                                             ?></td>
-                                                        <td><?= htmlspecialchars($med['file_name']) ?></td>
+                                                        <td>
+                                                            <div class="group-rename-wrap" id="fname-wrap-<?= (int)$med['media_id'] ?>">
+                                                                <input type="text" class="group-rename-input" 
+                                                                    id="fname-<?= (int)$med['media_id'] ?>"
+                                                                    value="<?= htmlspecialchars($med['file_name']) ?>"
+                                                                    oninput="onFileRenameInput(<?= (int)$med['media_id'] ?>)"
+                                                                    onkeydown="if(event.key==='Enter'){event.preventDefault();saveFileRename(<?= (int)$med['media_id'] ?>);}"
+                                                                    onkeyup="if(event.key==='Escape'){resetFileRename(<?= (int)$med['media_id'] ?>, <?= json_encode($med['file_name']) ?>);}">
+                                                                <button type="button" class="btn-group-rename-save" id="fname-save-<?= (int)$med['media_id'] ?>"
+                                                                    onclick="saveFileRename(<?= (int)$med['media_id'] ?>)">
+                                                                    <i class="fas fa-check"></i> Save
+                                                                </button>
+                                                            </div>
+                                                            <!-- hidden form for file rename -->
+                                                            <form method="POST" id="fFR<?= (int)$med['media_id'] ?>" style="display:none;">
+                                                                <input type="hidden" name="action" value="rename_media_file">
+                                                                <input type="hidden" name="media_id" value="<?= (int)$med['media_id'] ?>">
+                                                                <input type="hidden" name="new_file_name" id="ffr-name-<?= (int)$med['media_id'] ?>" value="">
+                                                            </form>
+                                                        </td>
                                                         <td>
                                                             <form method="POST" id="fDM<?= $globalMedIdx ?>">
                                                                 <input type="hidden" name="action" value="delete_media">
@@ -3712,7 +3826,7 @@ function splitProjectTitle($pt)
                     return r.project_name === projectName;
                 }) : ALL_TESTING;
                 var newOpts = filtered.map(function(r) {
-                    var label = '#' + r.testing_id + ' — ' + r.project_title + ' / ' + r.testing_name + ' / ' + r.testing_method;
+                    var label = r.project_title + ' / ' + r.testing_name + ' / ' + r.testing_method;
                     return {
                         value: r.testing_id.toString(),
                         label: label
@@ -3732,6 +3846,11 @@ function splitProjectTitle($pt)
                     updateTestingOptions(targetRow.project_name);
                     testingCombo.setValue(targetId.toString());
                     document.getElementById('btnLoad').disabled = false;
+                    // Scroll to edit section
+                    var editSection = document.querySelector('.card h2 .fa-info-circle');
+                    if (editSection) {
+                        editSection.closest('.card').scrollIntoView({behavior:'smooth', block:'start'});
+                    }
                 }
             <?php endif; ?>
 
@@ -4541,6 +4660,62 @@ function splitProjectTitle($pt)
                     btn.style.boxShadow = '';
                     alert('Save failed: ' + err);
                 });
+        }
+    </script>
+    <script>
+        // ── AJAX Engineer Check ───────────────────────────────────
+        function ajaxEngineerCheck(tableNum, checked) {
+            var tid = <?= $editTid ?? 0 ?>;
+            var checkRowId = 'engCheckRowT' + tableNum;
+            var labelId = 'engLabelT' + tableNum;
+            var row = document.getElementById(checkRowId);
+            var label = document.getElementById(labelId);
+            if (row) {
+                row.className = 'engineer-check-row' + (checked ? '' : ' unchecked');
+            }
+            if (label) {
+                label.textContent = checked ? 'Verified ✓' : 'Not yet verified';
+            }
+            var fd = new FormData();
+            fd.append('testing_id', tid);
+            fd.append('table_number', tableNum);
+            fd.append('checked', checked ? 1 : 0);
+            fetch('ajax_engineer_check.php', {method:'POST', body:fd})
+                .then(function(r){return r.json();})
+                .then(function(data){
+                    if (data.success && typeof confetti === 'function') {
+                        confetti({particleCount:80,spread:60,origin:{y:0.4},colors:['#6B8DB5','#68A87A','#C1A0D8','#FFD9A0']});
+                    }
+                })
+                .catch(function(e){ console.error('Engineer check failed:', e); });
+        }
+
+        // ── File Rename Helpers ───────────────────────────────────
+        function onFileRenameInput(mediaId) {
+            var inp = document.getElementById('fname-' + mediaId);
+            var btn = document.getElementById('fname-save-' + mediaId);
+            if (!inp || !btn) return;
+            btn.classList.add('visible');
+        }
+
+        function saveFileRename(mediaId) {
+            var inp = document.getElementById('fname-' + mediaId);
+            var newName = inp ? inp.value.trim() : '';
+            if (!newName) return;
+            var hidden = document.getElementById('ffr-name-' + mediaId);
+            if (hidden) hidden.value = newName;
+            var form = document.getElementById('fFR' + mediaId);
+            if (form) {
+                if (form.requestSubmit) form.requestSubmit();
+                else form.submit();
+            }
+        }
+
+        function resetFileRename(mediaId, originalName) {
+            var inp = document.getElementById('fname-' + mediaId);
+            var btn = document.getElementById('fname-save-' + mediaId);
+            if (inp) inp.value = originalName;
+            if (btn) btn.classList.remove('visible');
         }
     </script>
 

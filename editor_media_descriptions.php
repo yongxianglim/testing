@@ -73,7 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete_media') {
         $mid = (int)($_POST['media_id'] ?? 0);
         if ($mid) {
-            $conn->query("DELETE FROM media_files WHERE media_id=$mid");
+            $s = $conn->prepare("DELETE FROM media_files WHERE media_id=?");
+            $s->bind_param("i", $mid);
+            $s->execute();
             $msg = "Media deleted.";
             $msgType = 'success';
         } else {
@@ -89,7 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msgType = 'error';
         } else {
             if ($gname === '__ungrouped__' || $gname === null || $gname === '') {
-                $conn->query("DELETE FROM media_files WHERE testing_id=$tid AND (group_name IS NULL OR group_name='')");
+                $sg = $conn->prepare("DELETE FROM media_files WHERE testing_id=? AND (group_name IS NULL OR group_name='')");
+                $sg->bind_param("i", $tid);
+                $sg->execute();
             } else {
                 $sg = $conn->prepare("DELETE FROM media_files WHERE testing_id=? AND group_name=?");
                 $sg->bind_param("is", $tid, $gname);
@@ -232,7 +236,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete_description') {
         $did = (int)($_POST['description_id'] ?? 0);
         if ($did) {
-            $conn->query("DELETE FROM testing_description WHERE description_id=$did");
+            $s = $conn->prepare("DELETE FROM testing_description WHERE description_id=?");
+            $s->bind_param("i", $did);
+            $s->execute();
             $msg = "Description deleted.";
             $msgType = 'success';
         } else {
@@ -255,16 +261,28 @@ if ($editTid) {
     $s->execute();
     $editData = $s->get_result()->fetch_assoc();
     if ($editData) {
-        $fr = $conn->query("SELECT field_key,field_name,value_type,display_order FROM field_definitions WHERE testing_id=$editTid ORDER BY display_order");
-        while ($f = $fr->fetch_assoc()) {
+        $fr = $conn->prepare("SELECT field_key,field_name,value_type,display_order FROM field_definitions WHERE testing_id=? ORDER BY display_order");
+        $fr->bind_param("i", $editTid);
+        $fr->execute();
+        $frr = $fr->get_result();
+        while ($f = $frr->fetch_assoc()) {
             $editFields[] = $f;
         }
-        $mr = $conn->query("SELECT media_id,group_name,file_name,mime_type FROM media_files WHERE testing_id=$editTid ORDER BY ISNULL(group_name), group_name, created_at");
-        while ($m = $mr->fetch_assoc()) $editMedia[] = $m;
-        $dr = $conn->query("SELECT description_id,content FROM testing_description WHERE testing_id=$editTid ORDER BY created_at");
-        while ($d = $dr->fetch_assoc()) $editDesc[] = $d;
+        $mr = $conn->prepare("SELECT media_id,group_name,file_name,mime_type FROM media_files WHERE testing_id=? ORDER BY ISNULL(group_name), group_name, created_at");
+        $mr->bind_param("i", $editTid);
+        $mr->execute();
+        $mrr = $mr->get_result();
+        while ($m = $mrr->fetch_assoc()) $editMedia[] = $m;
+        $dr = $conn->prepare("SELECT description_id,content FROM testing_description WHERE testing_id=? ORDER BY created_at");
+        $dr->bind_param("i", $editTid);
+        $dr->execute();
+        $drr = $dr->get_result();
+        while ($d = $drr->fetch_assoc()) $editDesc[] = $d;
 
-        $gnQ = $conn->query("SELECT DISTINCT record_value AS group_name FROM testing_record WHERE field_key = 1 AND testing_id = $editTid AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
+        $gnQ = $conn->prepare("SELECT DISTINCT record_value AS group_name FROM testing_record WHERE field_key = 1 AND testing_id = ? AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
+        $gnQ->bind_param("i", $editTid);
+        $gnQ->execute();
+        $gnQ = $gnQ->get_result();
         $existingGroupNames = [];
         while ($gn = $gnQ->fetch_assoc()) $existingGroupNames[] = $gn['group_name'];
     }
@@ -2691,10 +2709,6 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
             glow.style.top = e.clientY + 'px';
         });
 
-        function escHtml(s) {
-            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
         // ── Grouped media upload ──────────────────────────────────
         var existingGroupNames = <?= json_encode($existingGroupNames) ?>;
         var mediaGroups = []; // [{id, name, dataTransfer}]
@@ -3434,45 +3448,6 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
                     btn.style.boxShadow = '';
                     alert('Save failed: ' + err);
                 });
-        }
-
-        // ── Group rename helpers (saved groups) ──────────────────
-        function onGroupRenameInput(inputId, saveBtnId, originalName) {
-            var inp = document.getElementById(inputId);
-            var btn = document.getElementById(saveBtnId);
-            if (!inp || !btn) return;
-            var changed = inp.value.trim() !== originalName &&
-                !(originalName === '__ungrouped__' && inp.value.trim() === 'Ungrouped');
-            if (changed) {
-                btn.classList.add('visible');
-            } else {
-                btn.classList.remove('visible');
-            }
-        }
-
-        function saveGroupRename(formId, inputId, saveBtnId, originalName) {
-            var inp = document.getElementById(inputId);
-            var newName = inp ? inp.value.trim() : '';
-            if (newName === '' || newName === originalName ||
-                (originalName === '__ungrouped__' && newName === 'Ungrouped')) {
-                resetGroupRename(inputId, saveBtnId, originalName === '__ungrouped__' ? 'Ungrouped' : originalName);
-                return;
-            }
-            var hiddenId = inputId + '-hidden';
-            var hidden = document.getElementById(hiddenId);
-            if (hidden) hidden.value = newName;
-            var form = document.getElementById(formId);
-            if (form) {
-                if (form.requestSubmit) form.requestSubmit();
-                else form.submit();
-            }
-        }
-
-        function resetGroupRename(inputId, saveBtnId, originalDisplay) {
-            var inp = document.getElementById(inputId);
-            var btn = document.getElementById(saveBtnId);
-            if (inp) inp.value = originalDisplay;
-            if (btn) btn.classList.remove('visible');
         }
 
         // ── File Rename Helpers ───────────────────────────────────

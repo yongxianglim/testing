@@ -502,16 +502,6 @@ $conn->close();
                                 <div style="font-size:12px;color:#CBD5E0;font-style:italic;">Select media below</div>
                             </div>
                             <div class="slot-picker-area">
-                                <div class="media-search-wrap">
-                                    <i class="fas fa-magnifying-glass media-search-icon"></i>
-                                    <input type="text" class="media-search-input" id="slotSearch<?= $s ?>"
-                                        placeholder="Search media by name or group…"
-                                        oninput="handleSearchInput(<?= $s ?>, this.value)"
-                                        onfocus="openSearchDrop(<?= $s ?>)"
-                                        onblur="closeSearchDrop(<?= $s ?>, 200)"
-                                        autocomplete="off" spellcheck="false">
-                                    <div class="media-search-drop" id="slotDrop<?= $s ?>"></div>
-                                </div>
                                 <button class="btn-browse-media" onclick="openPickerModal(<?= $s ?>)">
                                     <i class="fas fa-folder-open"></i> Browse Media
                                 </button>

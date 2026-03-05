@@ -916,7 +916,7 @@ $conn->close();
         } else {
             imgArea.innerHTML = '<div class="slot-no-image"><i class="fas fa-file" style="color:#6B8DB5;"></i>' +
                 '<a href="media_detail.php?media_id=' + mid + '" class="btn btn-sm btn-secondary" style="margin-top:8px;">' +
-                '<i class="fas fa-external-link-alt"></i> ' + escHtml(m.file_name) + '</a></div>';
+                '<i class="fas fa-eye"></i> View Details</a></div>';
         }
 
         var rowLabel = m.group_name ? 'Group: ' + escHtml(m.group_name) : '';

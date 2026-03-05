@@ -617,8 +617,8 @@ if ($editTid) {
         $dr = $conn->query("SELECT description_id,content FROM testing_description WHERE testing_id=$editTid ORDER BY created_at");
         while ($d = $dr->fetch_assoc()) $editDesc[] = $d;
 
-        // Collect distinct group names for combobox suggestions (across all testings)
-        $gnQ = $conn->query("SELECT DISTINCT group_name FROM media_files WHERE group_name IS NOT NULL AND group_name <> '' ORDER BY group_name");
+        // Collect group name suggestions from field_key=1 record values for this testing
+        $gnQ = $conn->query("SELECT DISTINCT record_value AS group_name FROM testing_record WHERE field_key = 1 AND testing_id = $editTid AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
         $existingGroupNames = [];
         while ($gn = $gnQ->fetch_assoc()) $existingGroupNames[] = $gn['group_name'];
     }

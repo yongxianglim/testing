@@ -164,9 +164,17 @@ $conn->close();
         .slot-no-image {
             width:100%; height:100%; display:flex; align-items:center;
             justify-content:center; flex-direction:column; gap:8px;
+<<<<<<< Updated upstream
             color:#CBD5E0; font-size:13px;
+=======
+            color:#CBD5E0; font-size:13px; cursor:pointer; transition:all 0.2s;
+>>>>>>> Stashed changes
         }
-        .slot-no-image i { font-size:32px; }
+        .slot-no-image:hover { color:#8BB3D9; background:rgba(107,141,181,0.06); }
+        .slot-no-image i { font-size:32px; transition:transform 0.2s; }
+        .slot-no-image:hover i { transform:scale(1.12); }
+        .slot-no-image span { font-weight:500; }
+        .slot-no-image small { font-size:11px; color:#CBD5E0; }
         .slot-info { padding:12px 14px; }
         .slot-meta-title { font-size:13px; font-weight:700; color:#2D3748; margin-bottom:2px; }
         .slot-meta-sub { font-size:11.5px; color:#718096; margin-bottom:8px; }
@@ -216,6 +224,174 @@ $conn->close();
         .media-opt-name { font-size:12.5px; font-weight:600; color:#2D3748; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .media-opt-sub { font-size:11px; color:#A0AEC0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .media-search-empty { padding:14px; text-align:center; color:#A0AEC0; font-size:13px; font-style:italic; }
+
+        /* ── Browse Media Button ── */
+        .btn-browse-media {
+            display:inline-flex; align-items:center; gap:7px; margin-top:10px;
+            padding:8px 14px; border:1.5px dashed rgba(107,141,181,0.4);
+            border-radius:11px; background:rgba(107,141,181,0.05);
+            color:#6B8DB5; font-size:12px; font-weight:600; font-family:'Inter',sans-serif;
+            cursor:pointer; width:100%; justify-content:center; transition:all 0.22s;
+        }
+        .btn-browse-media:hover { background:rgba(107,141,181,0.12); border-color:rgba(107,141,181,0.6); transform:none; }
+
+        /* ── Media Picker Modal ── */
+        .picker-overlay {
+            display:none; position:fixed; inset:0; z-index:2000;
+            background:rgba(20,24,40,0.55); backdrop-filter:blur(6px);
+            align-items:center; justify-content:center; padding:20px;
+        }
+        .picker-overlay.open { display:flex; animation:pickerFadeIn 0.22s ease; }
+        @keyframes pickerFadeIn { from{opacity:0} to{opacity:1} }
+
+        .picker-modal {
+            background:rgba(255,255,255,0.97); border-radius:24px; width:100%; max-width:980px;
+            max-height:88vh; display:flex; flex-direction:column;
+            box-shadow:0 24px 80px rgba(0,0,0,0.22),0 0 0 1px rgba(255,255,255,0.8);
+            animation:pickerSlideUp 0.25s cubic-bezier(0.16,1,0.3,1);
+            overflow:hidden;
+        }
+        @keyframes pickerSlideUp { from{opacity:0;transform:translateY(28px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        /* Modal Header */
+        .picker-header {
+            padding:18px 22px 14px; border-bottom:1px solid rgba(107,141,181,0.12);
+            display:flex; align-items:center; gap:14px; flex-shrink:0;
+            background:linear-gradient(to bottom, rgba(107,141,181,0.06), transparent);
+        }
+        .picker-header-icon {
+            width:42px; height:42px; border-radius:13px; flex-shrink:0;
+            background:linear-gradient(135deg,#6B8DB5,#8BB3D9);
+            display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:17px; box-shadow:0 4px 14px rgba(107,141,181,0.3);
+        }
+        .picker-header-text { flex:1; min-width:0; }
+        .picker-header-title { font-size:16px; font-weight:800; color:#2D3748; }
+        .picker-header-sub { font-size:12px; color:#A0AEC0; margin-top:1px; }
+        .picker-close-btn {
+            width:36px; height:36px; border:none; border-radius:10px; cursor:pointer;
+            background:rgba(107,141,181,0.08); color:#718096; font-size:16px;
+            display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s; flex-shrink:0;
+        }
+        .picker-close-btn:hover { background:rgba(208,112,112,0.1); color:#D07070; }
+
+        /* Modal Search Bar */
+        .picker-search-bar {
+            padding:12px 22px; border-bottom:1px solid rgba(107,141,181,0.1); flex-shrink:0;
+        }
+        .picker-search-inner { position:relative; }
+        .picker-search-inner input {
+            width:100%; padding:10px 14px 10px 38px;
+            border:1.5px solid rgba(107,141,181,0.22); border-radius:12px;
+            font-size:13.5px; font-family:'Inter',sans-serif; color:#2D3748;
+            background:rgba(107,141,181,0.04); outline:none; transition:all 0.22s;
+        }
+        .picker-search-inner input:focus { border-color:rgba(107,141,181,0.5); background:#fff; box-shadow:0 0 0 3px rgba(107,141,181,0.1); }
+        .picker-search-inner i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#A0AEC0; font-size:14px; pointer-events:none; }
+        .picker-search-clear {
+            position:absolute; right:10px; top:50%; transform:translateY(-50%);
+            background:none; border:none; color:#A0AEC0; cursor:pointer; padding:4px;
+            border-radius:6px; font-size:13px; display:none; line-height:1;
+        }
+        .picker-search-clear.visible { display:block; }
+
+        /* Modal Body */
+        .picker-body { display:flex; flex:1; overflow:hidden; min-height:0; }
+
+        /* Sidebar filters */
+        .picker-sidebar {
+            width:210px; flex-shrink:0; border-right:1px solid rgba(107,141,181,0.1);
+            overflow-y:auto; padding:14px 12px;
+            background:rgba(107,141,181,0.02);
+        }
+        .picker-filter-section { margin-bottom:18px; }
+        .picker-filter-label {
+            font-size:10px; font-weight:700; color:#A0AEC0; letter-spacing:1.4px;
+            text-transform:uppercase; padding:0 4px; margin-bottom:8px; display:block;
+        }
+        .picker-filter-item {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:7px 10px; border-radius:9px; cursor:pointer; transition:all 0.15s;
+            font-size:12.5px; color:#4A5568; font-weight:500; margin-bottom:2px;
+        }
+        .picker-filter-item:hover { background:rgba(107,141,181,0.1); color:#4A7BA8; }
+        .picker-filter-item.active { background:rgba(107,141,181,0.14); color:#4A7BA8; font-weight:700; }
+        .picker-filter-count {
+            font-size:10.5px; color:#A0AEC0; background:rgba(107,141,181,0.1);
+            padding:2px 7px; border-radius:20px; font-weight:600;
+        }
+        .picker-filter-item.active .picker-filter-count { background:rgba(107,141,181,0.2); color:#6B8DB5; }
+
+        /* Media grid */
+        .picker-grid-wrap { flex:1; overflow-y:auto; padding:16px; min-width:0; }
+        .picker-grid-info {
+            font-size:12px; color:#A0AEC0; margin-bottom:12px;
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .picker-grid-info strong { color:#4A5568; }
+        .picker-view-btns { display:flex; gap:5px; }
+        .picker-view-btn {
+            width:28px; height:28px; border:1.5px solid rgba(107,141,181,0.2);
+            border-radius:7px; background:none; color:#A0AEC0; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:12px; transition:all 0.15s;
+        }
+        .picker-view-btn.active { background:rgba(107,141,181,0.12); color:#6B8DB5; border-color:rgba(107,141,181,0.35); }
+
+        .picker-media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+        .picker-media-grid.list-view { grid-template-columns:1fr; gap:6px; }
+
+        .picker-media-item {
+            border:2px solid rgba(107,141,181,0.12); border-radius:14px; overflow:hidden;
+            cursor:pointer; transition:all 0.2s; background:rgba(255,255,255,0.7);
+            position:relative;
+        }
+        .picker-media-item:hover { border-color:rgba(107,141,181,0.45); box-shadow:0 6px 20px rgba(107,141,181,0.18); transform:translateY(-2px); }
+        .picker-media-item.selected { border-color:#6B8DB5; box-shadow:0 0 0 3px rgba(107,141,181,0.2); }
+        .picker-media-item .item-check {
+            position:absolute; top:7px; right:7px; width:22px; height:22px; border-radius:50%;
+            background:#6B8DB5; color:#fff; font-size:11px; display:none;
+            align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(107,141,181,0.4);
+            z-index:2;
+        }
+        .picker-media-item.selected .item-check { display:flex; }
+
+        /* Grid view thumbnail */
+        .picker-media-item .item-thumb {
+            width:100%; aspect-ratio:1/1; overflow:hidden; background:rgba(107,141,181,0.06);
+            display:flex; align-items:center; justify-content:center;
+        }
+        .picker-media-item .item-thumb img { width:100%; height:100%; object-fit:cover; transition:transform 0.3s; }
+        .picker-media-item:hover .item-thumb img { transform:scale(1.06); }
+        .picker-media-item .item-thumb .file-icon { font-size:28px; color:#8BB3D9; }
+        .picker-media-item .item-caption {
+            padding:8px 10px; border-top:1px solid rgba(107,141,181,0.08);
+        }
+        .picker-media-item .item-name { font-size:11.5px; font-weight:600; color:#2D3748; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .picker-media-item .item-sub { font-size:10.5px; color:#A0AEC0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+
+        /* List view */
+        .picker-media-grid.list-view .picker-media-item { border-radius:11px; }
+        .picker-media-grid.list-view .item-thumb { width:50px; aspect-ratio:1/1; flex-shrink:0; border-radius:0; }
+        .picker-media-grid.list-view .picker-media-item { display:flex; flex-direction:row; align-items:center; }
+        .picker-media-grid.list-view .item-caption { border-top:none; border-left:1px solid rgba(107,141,181,0.08); flex:1; min-width:0; padding:10px 12px; }
+        .picker-media-grid.list-view .item-check { position:static; margin-right:10px; flex-shrink:0; }
+        .picker-media-grid.list-view .picker-media-item.selected .item-check { order:-1; }
+
+        .picker-empty { padding:50px 20px; text-align:center; color:#A0AEC0; }
+        .picker-empty i { font-size:42px; margin-bottom:14px; display:block; opacity:0.4; }
+        .picker-empty p { font-size:14px; }
+
+        /* Modal Footer */
+        .picker-footer {
+            padding:14px 22px; border-top:1px solid rgba(107,141,181,0.12);
+            display:flex; align-items:center; justify-content:space-between; gap:12px;
+            flex-shrink:0; background:rgba(255,255,255,0.8);
+        }
+        .picker-selection-info { font-size:13px; color:#718096; }
+        .picker-selection-info strong { color:#2D3748; font-weight:700; }
+        .picker-footer-btns { display:flex; gap:10px; }
+
         /* Responsive */
         @media(max-width:900px) {
             .compare-grid.layout-1x4 { grid-template-columns: repeat(2, 1fr); }
@@ -286,8 +462,13 @@ $conn->close();
                                 <span class="slot-num">Slot <?= $s ?></span>
                                 <button class="slot-clear-btn" onclick="clearSlot(<?= $s ?>)" title="Clear"><i class="fas fa-times"></i></button>
                             </div>
+<<<<<<< Updated upstream
                             <div class="slot-image-area" id="slotImg<?= $s ?>">
                                 <div class="slot-no-image"><i class="fas fa-image"></i><span>No media selected</span></div>
+=======
+                            <div class="slot-image-area" id="slotImg<?= $s ?>" onclick="openSlotMediaPicker(<?= $s ?>)">
+                                <div class="slot-no-image"><i class="fas fa-image"></i><span>No media selected</span><small>Click to browse</small></div>
+>>>>>>> Stashed changes
                             </div>
                             <div class="slot-info" id="slotInfo<?= $s ?>">
                                 <div style="font-size:12px;color:#CBD5E0;font-style:italic;">Select media below</div>
@@ -303,12 +484,88 @@ $conn->close();
                                         autocomplete="off" spellcheck="false">
                                     <div class="media-search-drop" id="slotDrop<?= $s ?>"></div>
                                 </div>
+                                <button class="btn-browse-media" onclick="openPickerModal(<?= $s ?>)">
+                                    <i class="fas fa-folder-open"></i> Browse Media
+                                </button>
                             </div>
                         </div>
                         <?php endfor; ?>
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Google Picker–style Media Picker Modal ── -->
+    <div class="picker-overlay" id="pickerOverlay" onclick="handlePickerOverlayClick(event)">
+        <div class="picker-modal" id="pickerModal">
+            <!-- Header -->
+            <div class="picker-header">
+                <div class="picker-header-icon"><i class="fas fa-photo-film"></i></div>
+                <div class="picker-header-text">
+                    <div class="picker-header-title">Select Media</div>
+                    <div class="picker-header-sub" id="pickerHeaderSub">Choose a media item for Slot 1</div>
+                </div>
+                <button class="picker-close-btn" onclick="closePickerModal()" title="Close"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Search bar -->
+            <div class="picker-search-bar">
+                <div class="picker-search-inner">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input type="text" id="pickerSearchInput" placeholder="Search by file name, project, group…" oninput="pickerHandleSearch(this.value)" autocomplete="off" spellcheck="false">
+                    <button class="picker-search-clear" id="pickerSearchClear" onclick="pickerClearSearch()"><i class="fas fa-times-circle"></i></button>
+                </div>
+            </div>
+
+            <!-- Body: sidebar + grid -->
+            <div class="picker-body">
+                <!-- Sidebar -->
+                <div class="picker-sidebar" id="pickerSidebar">
+                    <div class="picker-filter-section">
+                        <span class="picker-filter-label">Type</span>
+                        <div class="picker-filter-item active" id="pf-type-all" onclick="pickerSetTypeFilter('all')">
+                            <span><i class="fas fa-layer-group" style="width:14px;margin-right:6px;color:#A0AEC0;"></i>All media</span>
+                            <span class="picker-filter-count" id="pf-count-all">0</span>
+                        </div>
+                        <div class="picker-filter-item" id="pf-type-image" onclick="pickerSetTypeFilter('image')">
+                            <span><i class="fas fa-image" style="width:14px;margin-right:6px;color:#A0AEC0;"></i>Images</span>
+                            <span class="picker-filter-count" id="pf-count-image">0</span>
+                        </div>
+                        <div class="picker-filter-item" id="pf-type-file" onclick="pickerSetTypeFilter('file')">
+                            <span><i class="fas fa-file" style="width:14px;margin-right:6px;color:#A0AEC0;"></i>Files</span>
+                            <span class="picker-filter-count" id="pf-count-file">0</span>
+                        </div>
+                    </div>
+                    <div class="picker-filter-section">
+                        <span class="picker-filter-label">Project</span>
+                        <div id="pickerProjectFilters"></div>
+                    </div>
+                </div>
+
+                <!-- Media grid -->
+                <div class="picker-grid-wrap" id="pickerGridWrap">
+                    <div class="picker-grid-info">
+                        <span id="pickerResultCount"><strong>0</strong> items</span>
+                        <div class="picker-view-btns">
+                            <button class="picker-view-btn active" id="pvbGrid" onclick="setPickerView('grid')" title="Grid view"><i class="fas fa-grip"></i></button>
+                            <button class="picker-view-btn" id="pvbList" onclick="setPickerView('list')" title="List view"><i class="fas fa-list"></i></button>
+                        </div>
+                    </div>
+                    <div class="picker-media-grid" id="pickerMediaGrid"></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="picker-footer">
+                <div class="picker-selection-info" id="pickerSelInfo">No item selected</div>
+                <div class="picker-footer-btns">
+                    <button class="btn btn-secondary btn-sm" onclick="closePickerModal()">Cancel</button>
+                    <button class="btn btn-primary btn-sm" id="pickerConfirmBtn" onclick="pickerConfirmSelection()" disabled>
+                        <i class="fas fa-check"></i> Select
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -367,6 +624,236 @@ $conn->close();
         return ALL_MEDIA.find(function(m) { return m.media_id === mediaId; });
     }
 
+<<<<<<< Updated upstream
+=======
+    function openSlotMediaPicker(slot) {
+        if (slotMedia[slot]) return; // only trigger when no media is selected
+        openPickerModal(slot);
+    }
+
+    // ── Media Picker Modal State ──
+    var pickerActiveSlot = null;
+    var pickerTypeFilter = 'all';
+    var pickerProjectFilter = null;
+    var pickerSearchQuery = '';
+    var pickerSelectedId = null;
+    var pickerView = 'grid';
+
+    function openPickerModal(slot) {
+        pickerActiveSlot = slot;
+        pickerSelectedId = slotMedia[slot] || null;
+        pickerTypeFilter = 'all';
+        pickerProjectFilter = null;
+        pickerSearchQuery = '';
+
+        document.getElementById('pickerHeaderSub').textContent = 'Choose a media item for Slot ' + slot;
+        document.getElementById('pickerSearchInput').value = '';
+        document.getElementById('pickerSearchClear').classList.remove('visible');
+
+        buildPickerSidebarProjects();
+        updatePickerTypeCounts();
+        renderPickerGrid();
+        updatePickerFooter();
+
+        document.getElementById('pickerOverlay').classList.add('open');
+        setTimeout(function() { document.getElementById('pickerSearchInput').focus(); }, 120);
+    }
+
+    function closePickerModal() {
+        document.getElementById('pickerOverlay').classList.remove('open');
+        pickerActiveSlot = null;
+        pickerSelectedId = null;
+    }
+
+    function handlePickerOverlayClick(e) {
+        if (e.target === document.getElementById('pickerOverlay')) closePickerModal();
+    }
+
+    function buildPickerSidebarProjects() {
+        var seen = {};
+        ALL_MEDIA.forEach(function(m) { seen[m.project_title] = (seen[m.project_title] || 0) + 1; });
+        var projects = Object.keys(seen).sort();
+        var container = document.getElementById('pickerProjectFilters');
+        container.innerHTML = '';
+
+        var allItem = document.createElement('div');
+        allItem.className = 'picker-filter-item active';
+        allItem.id = 'pf-proj-all';
+        allItem.innerHTML = '<span><i class="fas fa-folder-open" style="width:14px;margin-right:6px;color:#A0AEC0;"></i>All projects</span>' +
+            '<span class="picker-filter-count">' + ALL_MEDIA.length + '</span>';
+        allItem.onclick = function() { pickerSetProjectFilter(null); };
+        container.appendChild(allItem);
+
+        projects.forEach(function(proj) {
+            var item = document.createElement('div');
+            item.className = 'picker-filter-item';
+            item.id = 'pf-proj-' + encodeURIComponent(proj);
+            item.innerHTML = '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;" title="' + escHtml(proj) + '">' +
+                '<i class="fas fa-folder" style="width:14px;margin-right:6px;color:#A0AEC0;flex-shrink:0;"></i>' + escHtml(proj) + '</span>' +
+                '<span class="picker-filter-count">' + seen[proj] + '</span>';
+            item.onclick = (function(p) { return function() { pickerSetProjectFilter(p); }; })(proj);
+            container.appendChild(item);
+        });
+    }
+
+    function updatePickerTypeCounts() {
+        var all = filterPickerMedia('', null, '');
+        var images = all.filter(function(m) { return m.is_image; });
+        var files  = all.filter(function(m) { return !m.is_image; });
+        document.getElementById('pf-count-all').textContent = all.length;
+        document.getElementById('pf-count-image').textContent = images.length;
+        document.getElementById('pf-count-file').textContent = files.length;
+    }
+
+    function filterPickerMedia(typeF, projF, searchQ) {
+        var q = (searchQ || '').trim().toLowerCase();
+        return ALL_MEDIA.filter(function(m) {
+            if (typeF === 'image' && !m.is_image) return false;
+            if (typeF === 'file'  && m.is_image)  return false;
+            if (projF !== null && m.project_title !== projF) return false;
+            if (q) {
+                var hay = (m.file_name + ' ' + (m.group_name || '') + ' ' + m.project_title + ' ' + m.testing_name).toLowerCase();
+                if (hay.indexOf(q) < 0) return false;
+            }
+            return true;
+        });
+    }
+
+    function renderPickerGrid() {
+        var grid = document.getElementById('pickerMediaGrid');
+        var results = filterPickerMedia(pickerTypeFilter, pickerProjectFilter, pickerSearchQuery);
+
+        document.getElementById('pickerResultCount').innerHTML = '<strong>' + results.length + '</strong> item' + (results.length !== 1 ? 's' : '');
+
+        grid.className = 'picker-media-grid' + (pickerView === 'list' ? ' list-view' : '');
+        grid.innerHTML = '';
+
+        if (results.length === 0) {
+            grid.innerHTML = '<div class="picker-empty"><i class="fas fa-photo-film"></i><p>No media matches your search.</p></div>';
+            return;
+        }
+
+        results.forEach(function(m) {
+            var item = document.createElement('div');
+            item.className = 'picker-media-item' + (m.media_id === pickerSelectedId ? ' selected' : '');
+            item.dataset.mediaId = m.media_id;
+
+            var checkEl = document.createElement('div');
+            checkEl.className = 'item-check';
+            checkEl.innerHTML = '<i class="fas fa-check"></i>';
+
+            var thumbEl = document.createElement('div');
+            thumbEl.className = 'item-thumb';
+            if (m.is_image) {
+                var img = document.createElement('img');
+                img.src = 'media.php?id=' + m.media_id;
+                img.alt = m.file_name;
+                img.loading = 'lazy';
+                thumbEl.appendChild(img);
+            } else {
+                thumbEl.innerHTML = '<i class="fas fa-file file-icon"></i>';
+            }
+
+            var captionEl = document.createElement('div');
+            captionEl.className = 'item-caption';
+            captionEl.innerHTML = '<div class="item-name" title="' + escHtml(m.file_name) + '">' + escHtml(m.file_name) + '</div>' +
+                '<div class="item-sub">' + escHtml(m.project_title) + (m.group_name ? ' · ' + escHtml(m.group_name) : '') + '</div>';
+
+            item.appendChild(checkEl);
+            item.appendChild(thumbEl);
+            item.appendChild(captionEl);
+
+            (function(mediaId) {
+                item.addEventListener('click', function() {
+                    pickerSelectItem(mediaId);
+                });
+                item.addEventListener('dblclick', function() {
+                    pickerSelectItem(mediaId);
+                    pickerConfirmSelection();
+                });
+            })(m.media_id);
+
+            grid.appendChild(item);
+        });
+    }
+
+    function pickerSelectItem(mediaId) {
+        pickerSelectedId = (pickerSelectedId === mediaId) ? null : mediaId;
+        // Update visual state without full re-render
+        document.querySelectorAll('.picker-media-item').forEach(function(el) {
+            el.classList.toggle('selected', parseInt(el.dataset.mediaId) === pickerSelectedId);
+        });
+        updatePickerFooter();
+    }
+
+    function updatePickerFooter() {
+        var infoEl = document.getElementById('pickerSelInfo');
+        var confirmBtn = document.getElementById('pickerConfirmBtn');
+        if (pickerSelectedId) {
+            var m = findMedia(pickerSelectedId);
+            infoEl.innerHTML = '<strong>' + escHtml(m ? m.file_name : 'Selected') + '</strong> &mdash; ' + escHtml(m ? m.project_title : '');
+            confirmBtn.disabled = false;
+        } else {
+            infoEl.textContent = 'No item selected';
+            confirmBtn.disabled = true;
+        }
+    }
+
+    function pickerConfirmSelection() {
+        if (!pickerSelectedId || !pickerActiveSlot) return;
+        selectMedia(pickerActiveSlot, pickerSelectedId);
+        closePickerModal();
+    }
+
+    function pickerSetTypeFilter(type) {
+        pickerTypeFilter = type;
+        ['all','image','file'].forEach(function(t) {
+            document.getElementById('pf-type-' + t).classList.toggle('active', t === type);
+        });
+        renderPickerGrid();
+    }
+
+    function pickerSetProjectFilter(proj) {
+        pickerProjectFilter = proj;
+        document.getElementById('pf-proj-all').classList.toggle('active', proj === null);
+        document.querySelectorAll('[id^="pf-proj-"]').forEach(function(el) {
+            if (el.id === 'pf-proj-all') return;
+            el.classList.remove('active');
+        });
+        if (proj !== null) {
+            var el = document.getElementById('pf-proj-' + encodeURIComponent(proj));
+            if (el) el.classList.add('active');
+        }
+        renderPickerGrid();
+    }
+
+    function pickerHandleSearch(val) {
+        pickerSearchQuery = val;
+        document.getElementById('pickerSearchClear').classList.toggle('visible', val.length > 0);
+        renderPickerGrid();
+    }
+
+    function pickerClearSearch() {
+        document.getElementById('pickerSearchInput').value = '';
+        pickerHandleSearch('');
+        document.getElementById('pickerSearchInput').focus();
+    }
+
+    function setPickerView(view) {
+        pickerView = view;
+        document.getElementById('pvbGrid').classList.toggle('active', view === 'grid');
+        document.getElementById('pvbList').classList.toggle('active', view === 'list');
+        renderPickerGrid();
+    }
+
+    // Keyboard shortcut: Esc closes picker
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('pickerOverlay').classList.contains('open')) {
+            closePickerModal();
+        }
+    });
+
+>>>>>>> Stashed changes
     function clearSlot(slot) {
         slotMedia[slot] = null;
         renderSlot(slot);
@@ -388,7 +875,7 @@ $conn->close();
         var slotEl = document.getElementById('slot' + slot);
 
         if (!mid) {
-            imgArea.innerHTML = '<div class="slot-no-image"><i class="fas fa-image"></i><span>No media selected</span></div>';
+            imgArea.innerHTML = '<div class="slot-no-image"><i class="fas fa-image"></i><span>No media selected</span><small>Click to browse</small></div>';
             infoArea.innerHTML = '<div style="font-size:12px;color:#CBD5E0;font-style:italic;">Select media below</div>';
             slotEl.classList.remove('active');
             return;

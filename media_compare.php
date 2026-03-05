@@ -910,13 +910,13 @@ $conn->close();
         slotEl.classList.add('active');
 
         if (m.is_image) {
-            imgArea.innerHTML = '<a href="media.php?id=' + mid + '" target="_blank">' +
+            imgArea.innerHTML = '<a href="media_detail.php?media_id=' + mid + '">' +
                 '<img src="media.php?id=' + mid + '" alt="' + escHtml(m.file_name) + '">' +
                 '</a>';
         } else {
             imgArea.innerHTML = '<div class="slot-no-image"><i class="fas fa-file" style="color:#6B8DB5;"></i>' +
-                '<a href="media.php?id=' + mid + '" target="_blank" class="btn btn-sm btn-secondary" style="margin-top:8px;">' +
-                '<i class="fas fa-download"></i> ' + escHtml(m.file_name) + '</a></div>';
+                '<a href="media_detail.php?media_id=' + mid + '" class="btn btn-sm btn-secondary" style="margin-top:8px;">' +
+                '<i class="fas fa-external-link-alt"></i> ' + escHtml(m.file_name) + '</a></div>';
         }
 
         var rowLabel = m.group_name ? 'Group: ' + escHtml(m.group_name) : '';

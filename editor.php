@@ -602,8 +602,10 @@ if ($editTid) {
         }
         ksort($editRowsOther);
         // Get edited_by for both tables
-        $ebRow1 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=1 LIMIT 1")->fetch_assoc();
-        $ebRow2 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=2 LIMIT 1")->fetch_assoc();
+        $ebRes1 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=1 LIMIT 1");
+        $ebRow1 = $ebRes1 ? $ebRes1->fetch_assoc() : null;
+        $ebRes2 = $conn->query("SELECT edited_by FROM testing_record WHERE testing_id=$editTid AND table_number=2 LIMIT 1");
+        $ebRow2 = $ebRes2 ? $ebRes2->fetch_assoc() : null;
         $editedByT1 = $ebRow1['edited_by'] ?? null;
         $editedByT2 = $ebRow2['edited_by'] ?? null;
         $mr = $conn->query("SELECT media_id,group_name,file_name,mime_type FROM media_files WHERE testing_id=$editTid ORDER BY ISNULL(group_name), group_name, created_at");

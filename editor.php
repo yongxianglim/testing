@@ -4522,6 +4522,11 @@ function splitProjectTitle($pt)
             renderDescQueue();
         }
 
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
         function renderDescQueue() {
             var list = document.getElementById('pendingDescsList');
             var btn = document.getElementById('btnAddDescs');
@@ -4537,16 +4542,10 @@ function splitProjectTitle($pt)
                 ta.oninput = (function(i) {
                     return function() {
                         descQueue[i] = this.value;
-                        // auto-resize
-                        this.style.height = 'auto';
-                        this.style.height = this.scrollHeight + 'px';
+                        autoResizeTextarea(this);
                     };
                 })(idx);
-                // auto-resize on render
-                setTimeout(function() {
-                    ta.style.height = 'auto';
-                    ta.style.height = ta.scrollHeight + 'px';
-                }, 0);
+                setTimeout(function() { autoResizeTextarea(ta); }, 0);
                 var rmBtn = document.createElement('button');
                 rmBtn.type = 'button';
                 rmBtn.className = 'pending-desc-remove';

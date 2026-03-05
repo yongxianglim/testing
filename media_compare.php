@@ -323,7 +323,7 @@ $conn->close();
                                 <span class="slot-num">Slot <?= $s ?></span>
                                 <button class="slot-clear-btn" onclick="clearSlot(<?= $s ?>)" title="Clear"><i class="fas fa-times"></i></button>
                             </div>
-                            <div class="slot-image-area" id="slotImg<?= $s ?>" onclick="triggerSlotPicker(<?= $s ?>)">
+                            <div class="slot-image-area" id="slotImg<?= $s ?>" onclick="openSlotMediaPicker(<?= $s ?>)">
                                 <div class="slot-no-image"><i class="fas fa-image"></i><span>No media selected</span></div>
                             </div>
                             <div class="slot-info" id="slotInfo<?= $s ?>">
@@ -404,7 +404,7 @@ $conn->close();
         return ALL_MEDIA.find(function(m) { return m.media_id === mediaId; });
     }
 
-    function triggerSlotPicker(slot) {
+    function openSlotMediaPicker(slot) {
         if (slotMedia[slot]) return; // only trigger when no media is selected
         var inp = document.getElementById('slotSearch' + slot);
         if (inp) { inp.focus(); }

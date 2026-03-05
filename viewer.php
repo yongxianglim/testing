@@ -481,6 +481,7 @@ function getAvgClass($a)
             padding: 26px;
             margin-bottom: 22px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            overflow: visible;
         }
 
         .card h2 {
@@ -640,6 +641,7 @@ function getAvgClass($a)
             padding: 18px 20px;
             box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
             animation: filterSetIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: visible;
         }
 
         @keyframes filterSetIn {
@@ -1216,7 +1218,7 @@ function getAvgClass($a)
             top: calc(100% + 5px);
             left: 0;
             right: 0;
-            z-index: 800;
+            z-index: 9999;
             background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);

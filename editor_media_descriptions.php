@@ -312,15 +312,16 @@ if ($editTid) {
 
         // Build group name suggestions: append field_key=2 value when field_key=1 is duplicated
         $existingGroupNames = [];
+        $seenNames = [];
         foreach ($fk1Rows as $row) {
             $val = $row['record_value'];
-            if ($fk1Counts[$val] > 1) {
-                $fk2Val = $fk2Map[(int)$row['row_number']] ?? '';
-                $groupName = $val . ', ' . $fk2Val;
+            if ($fk1Counts[$val] > 1 && isset($fk2Map[(int)$row['row_number']]) && $fk2Map[(int)$row['row_number']] !== '') {
+                $groupName = $val . ', ' . $fk2Map[(int)$row['row_number']];
             } else {
                 $groupName = $val;
             }
-            if (!in_array($groupName, $existingGroupNames)) {
+            if (!isset($seenNames[$groupName])) {
+                $seenNames[$groupName] = true;
                 $existingGroupNames[] = $groupName;
             }
         }

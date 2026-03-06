@@ -40,7 +40,7 @@ if ($groupName !== null && $groupName !== '') {
     $rRow = $rStmt->get_result()->fetch_assoc();
 
     // If no match and group_name contains ", ", try combined fk1+fk2 format
-    if (!$rRow && strpos($groupName, ', ') !== false) {
+    if (!$rRow && str_contains($groupName, ', ')) {
         $parts = explode(', ', $groupName, 2);
         $fk1Val = $parts[0];
         $fk2Val = $parts[1];

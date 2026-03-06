@@ -356,7 +356,7 @@ $conn->close();
                 <!-- Project / Testing info -->
                 <div class="card" style="animation-delay:0.05s;">
                     <h2><i class="fas fa-flask"></i> Testing Information</h2>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
+                    <div style="display:grid;grid-template-columns:1fr;gap:16px;">
                         <div class="meta-block">
                             <div class="meta-label">Project Title</div>
                             <div class="meta-value"><?= htmlspecialchars($media['project_title']) ?></div>

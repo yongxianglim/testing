@@ -395,8 +395,19 @@ $conn->close();
         }
         .picker-view-btn.active { background:rgba(107,141,181,0.12); color:#6B8DB5; border-color:rgba(107,141,181,0.35); }
 
-        .picker-media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
-        .picker-media-grid.list-view { grid-template-columns:1fr; gap:6px; }
+        .picker-media-grid { display:flex; flex-direction:column; gap:18px; }
+        .picker-group-header {
+            display:flex; align-items:center; gap:8px; padding:0 2px 8px;
+            font-size:13px; font-weight:700; color:#4A5568; border-bottom:1px solid rgba(107,141,181,0.1);
+            margin-bottom:10px;
+        }
+        .picker-group-header i { color:#6B8DB5; font-size:13px; }
+        .picker-group-header .picker-group-count {
+            font-size:10.5px; color:#A0AEC0; background:rgba(107,141,181,0.1);
+            padding:2px 7px; border-radius:20px; font-weight:600; margin-left:auto;
+        }
+        .picker-group-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+        .picker-group-grid.list-view { grid-template-columns:1fr; gap:6px; }
 
         .picker-media-item {
             border:2px solid rgba(107,141,181,0.12); border-radius:14px; overflow:hidden;
@@ -428,12 +439,12 @@ $conn->close();
         .picker-media-item .item-sub { font-size:10.5px; color:#A0AEC0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 
         /* List view */
-        .picker-media-grid.list-view .picker-media-item { border-radius:11px; }
-        .picker-media-grid.list-view .item-thumb { width:50px; aspect-ratio:1/1; flex-shrink:0; border-radius:0; }
-        .picker-media-grid.list-view .picker-media-item { display:flex; flex-direction:row; align-items:center; }
-        .picker-media-grid.list-view .item-caption { border-top:none; border-left:1px solid rgba(107,141,181,0.08); flex:1; min-width:0; padding:10px 12px; }
-        .picker-media-grid.list-view .item-check { position:static; margin-right:10px; flex-shrink:0; }
-        .picker-media-grid.list-view .picker-media-item.selected .item-check { order:-1; }
+        .picker-group-grid.list-view .picker-media-item { border-radius:11px; }
+        .picker-group-grid.list-view .item-thumb { width:50px; aspect-ratio:1/1; flex-shrink:0; border-radius:0; }
+        .picker-group-grid.list-view .picker-media-item { display:flex; flex-direction:row; align-items:center; }
+        .picker-group-grid.list-view .item-caption { border-top:none; border-left:1px solid rgba(107,141,181,0.08); flex:1; min-width:0; padding:10px 12px; }
+        .picker-group-grid.list-view .item-check { position:static; margin-right:10px; flex-shrink:0; }
+        .picker-group-grid.list-view .picker-media-item.selected .item-check { order:-1; }
 
         .picker-empty { padding:50px 20px; text-align:center; color:#A0AEC0; }
         .picker-empty i { font-size:42px; margin-bottom:14px; display:block; opacity:0.4; }
@@ -746,7 +757,7 @@ $conn->close();
 
         document.getElementById('pickerResultCount').innerHTML = '<strong>' + results.length + '</strong> item' + (results.length !== 1 ? 's' : '');
 
-        grid.className = 'picker-media-grid' + (pickerView === 'list' ? ' list-view' : '');
+        grid.className = 'picker-media-grid';
         grid.innerHTML = '';
 
         if (results.length === 0) {
@@ -754,47 +765,78 @@ $conn->close();
             return;
         }
 
+        // Group results by group_name (preserve order of first appearance)
+        var groupOrder = [];
+        var grouped = {};
         results.forEach(function(m) {
-            var item = document.createElement('div');
-            item.className = 'picker-media-item' + (m.media_id === pickerSelectedId ? ' selected' : '');
-            item.dataset.mediaId = m.media_id;
-
-            var checkEl = document.createElement('div');
-            checkEl.className = 'item-check';
-            checkEl.innerHTML = '<i class="fas fa-check"></i>';
-
-            var thumbEl = document.createElement('div');
-            thumbEl.className = 'item-thumb';
-            if (m.is_image) {
-                var img = document.createElement('img');
-                img.src = 'media.php?id=' + m.media_id;
-                img.alt = m.file_name;
-                img.loading = 'lazy';
-                thumbEl.appendChild(img);
-            } else {
-                thumbEl.innerHTML = '<i class="fas fa-file file-icon"></i>';
+            var gn = m.group_name || 'Ungrouped';
+            if (!grouped[gn]) {
+                grouped[gn] = [];
+                groupOrder.push(gn);
             }
+            grouped[gn].push(m);
+        });
 
-            var captionEl = document.createElement('div');
-            captionEl.className = 'item-caption';
-            captionEl.innerHTML = '<div class="item-name" title="' + escHtml(m.file_name) + '">' + escHtml(m.file_name) + '</div>' +
-                '<div class="item-sub">' + escHtml(m.project_title) + (m.group_name ? ' · ' + escHtml(m.group_name) : '') + '</div>';
+        var isListView = pickerView === 'list';
 
-            item.appendChild(checkEl);
-            item.appendChild(thumbEl);
-            item.appendChild(captionEl);
+        groupOrder.forEach(function(gn) {
+            var section = document.createElement('div');
+            section.className = 'picker-group-section';
 
-            (function(mediaId) {
-                item.addEventListener('click', function() {
-                    pickerSelectItem(mediaId);
-                });
-                item.addEventListener('dblclick', function() {
-                    pickerSelectItem(mediaId);
-                    pickerConfirmSelection();
-                });
-            })(m.media_id);
+            var header = document.createElement('div');
+            header.className = 'picker-group-header';
+            header.innerHTML = '<i class="fas fa-layer-group"></i>' + escHtml(gn) +
+                '<span class="picker-group-count">' + grouped[gn].length + '</span>';
+            section.appendChild(header);
 
-            grid.appendChild(item);
+            var subGrid = document.createElement('div');
+            subGrid.className = 'picker-group-grid' + (isListView ? ' list-view' : '');
+
+            grouped[gn].forEach(function(m) {
+                var item = document.createElement('div');
+                item.className = 'picker-media-item' + (m.media_id === pickerSelectedId ? ' selected' : '');
+                item.dataset.mediaId = m.media_id;
+
+                var checkEl = document.createElement('div');
+                checkEl.className = 'item-check';
+                checkEl.innerHTML = '<i class="fas fa-check"></i>';
+
+                var thumbEl = document.createElement('div');
+                thumbEl.className = 'item-thumb';
+                if (m.is_image) {
+                    var img = document.createElement('img');
+                    img.src = 'media.php?id=' + m.media_id;
+                    img.alt = m.file_name;
+                    img.loading = 'lazy';
+                    thumbEl.appendChild(img);
+                } else {
+                    thumbEl.innerHTML = '<i class="fas fa-file file-icon"></i>';
+                }
+
+                var captionEl = document.createElement('div');
+                captionEl.className = 'item-caption';
+                captionEl.innerHTML = '<div class="item-name" title="' + escHtml(m.file_name) + '">' + escHtml(m.file_name) + '</div>' +
+                    '<div class="item-sub">' + escHtml(m.project_title) + (m.group_name ? ' · ' + escHtml(m.group_name) : '') + '</div>';
+
+                item.appendChild(checkEl);
+                item.appendChild(thumbEl);
+                item.appendChild(captionEl);
+
+                (function(mediaId) {
+                    item.addEventListener('click', function() {
+                        pickerSelectItem(mediaId);
+                    });
+                    item.addEventListener('dblclick', function() {
+                        pickerSelectItem(mediaId);
+                        pickerConfirmSelection();
+                    });
+                })(m.media_id);
+
+                subGrid.appendChild(item);
+            });
+
+            section.appendChild(subGrid);
+            grid.appendChild(section);
         });
     }
 

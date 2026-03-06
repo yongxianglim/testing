@@ -47,7 +47,7 @@ function getAvgClass($a)
     <?php include 'head.php'; ?>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        /* Page-specific: /* ── Cards ────────────────────────────────────── */ */
+        /* Page-specific: Cards */
         .card {
             background: rgba(255, 255, 255, 0.55);
             backdrop-filter: blur(20px);
@@ -86,7 +86,7 @@ function getAvgClass($a)
             transform: translateY(0);
         }
 
-        /* Page-specific: /* ── Filter Section ───────────────────────────── */ */
+        /* Page-specific: Filter Section */
         .filter-section {
             background: rgba(255, 255, 255, 0.55);
             backdrop-filter: blur(20px);
@@ -255,7 +255,7 @@ function getAvgClass($a)
             border: 1px solid rgba(160, 174, 192, 0.18);
         }
 
-        /* Page-specific: /* ── Media ────────────────────────────────────── */ */
+        /* Page-specific: Media */
         .media-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

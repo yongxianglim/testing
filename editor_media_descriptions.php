@@ -335,16 +335,173 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
 <head>
     <?php include 'head.php'; ?>
     <style>
-        /* Page-specific overrides: Cards */
+        /* Page-specific: Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            border-radius: 22px;
+            padding: 26px;
+            margin-bottom: 22px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
             overflow: visible;
+        }
 
-        /* Page-specific overrides: Buttons */
+        .card h2 {
+            font-size: 16px;
+            font-weight: 800;
+            color: #2D3748;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .card h2 i {
+            color: #6B8DB5;
+        }
+
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 0.45s ease, transform 0.45s ease;
+        }
+
+        .reveal-on-scroll.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Page-specific: Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6B8DB5, #8BB3D9);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(107, 141, 181, 0.25);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(107, 141, 181, 0.38);
+        }
+
+        .btn-secondary {
+            background: rgba(107, 141, 181, 0.1);
+            color: #6B8DB5;
+            border: 1px solid rgba(107, 141, 181, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(107, 141, 181, 0.18);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #68A87A, #8DC99F);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(104, 168, 122, 0.25);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(104, 168, 122, 0.38);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #E07070, #D07070);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(224, 112, 112, 0.2);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(224, 112, 112, 0.35);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #D4A85A, #E8C07A);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(212, 168, 90, 0.2);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 6px 20px rgba(212, 168, 90, 0.35);
+        }
+
+        .btn-sm {
+            padding: 7px 13px;
+            font-size: 12px;
+            border-radius: 10px;
+        }
+
         .btn:disabled {
             opacity: 0.45;
             pointer-events: none;
             transform: none;
+        }
 
-        /* Page-specific overrides: Forms */
+        /* Page-specific: Forms */
+        select,
+        input[type=text],
+        input[type=password],
+        textarea {
+            padding: 9px 13px;
+            border: 1.5px solid rgba(107, 141, 181, 0.15);
+            border-radius: 11px;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            background: rgba(255, 255, 255, 0.6);
+            color: #2D3748;
+            outline: none;
+            transition: all 0.25s;
+        }
+
+        select:focus,
+        input[type=text]:focus,
+        textarea:focus {
+            border-color: rgba(107, 141, 181, 0.4);
+            box-shadow: 0 0 0 3px rgba(107, 141, 181, 0.09);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4A5568;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
+
+        .inline-form {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
         /* ── Project Title split input ────────────────── */
         .pt-split {
             display: flex;
@@ -375,9 +532,57 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
             min-width: 200px;
         }
 
-        /* Page-specific overrides: Table */
+        /* Page-specific: Table */
+        .overflow-x {
+            overflow-x: auto;
+            border-radius: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            background: rgba(107, 141, 181, 0.07);
+            padding: 11px 14px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #718096;
+            border-bottom: 1px solid rgba(107, 141, 181, 0.1);
+        }
+
+        thead th:first-child {
+            border-radius: 14px 0 0 0;
+        }
+
+        thead th:last-child {
+            border-radius: 0 14px 0 0;
+        }
+
+        tbody tr {
+            transition: background 0.18s;
+        }
+
+        tbody tr:hover {
+            background: rgba(107, 141, 181, 0.04);
+        }
+
+        tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(107, 141, 181, 0.06);
+            color: #4A5568;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
         /* Auto-expanding textarea cells */
         tbody td textarea.cell-input {
+            width: 100%;
             min-width: 80px;
             min-height: 34px;
             resize: none;
@@ -393,13 +598,14 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
             transition: border-color 0.2s, box-shadow 0.2s;
             box-sizing: border-box;
             display: block;
+        }
+
         tbody td textarea.cell-input:focus {
             border-color: rgba(107, 141, 181, 0.4);
             box-shadow: 0 0 0 3px rgba(107, 141, 181, 0.09);
             background: rgba(255, 255, 255, 0.95);
             outline: none;
         }
-
 
         /* ── Engineer check ───────────────────────────── */
         .engineer-check-row {
@@ -930,7 +1136,28 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
             background: rgba(208, 112, 112, 0.12);
         }
 
-        /* Page-specific overrides: Messages */
+        /* Page-specific: Messages */
+        .msg-success {
+            background: rgba(104, 168, 122, 0.09);
+            color: #276749;
+            border: 1px solid rgba(104, 168, 122, 0.18);
+            padding: 13px 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .msg-error {
+            background: rgba(224, 112, 112, 0.08);
+            color: #9B2C2C;
+            border: 1px solid rgba(224, 112, 112, 0.14);
+            padding: 13px 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            animation: shakeErr 0.45s ease;
         }
 
         .msg-warning {
@@ -942,6 +1169,31 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
             margin-bottom: 20px;
             font-size: 13px;
             font-weight: 600;
+        }
+
+        @keyframes shakeErr {
+
+            0%,
+            100% {
+                transform: translateX(0)
+            }
+
+            20% {
+                transform: translateX(-5px)
+            }
+
+            40% {
+                transform: translateX(5px)
+            }
+
+            60% {
+                transform: translateX(-3px)
+            }
+
+            80% {
+                transform: translateX(3px)
+            }
+        }
 
         /* ── Save All card ────────────────────────────── */
         .save-all-card {

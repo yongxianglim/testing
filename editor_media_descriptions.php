@@ -279,12 +279,51 @@ if ($editTid) {
         $drr = $dr->get_result();
         while ($d = $drr->fetch_assoc()) $editDesc[] = $d;
 
-        $gnStmt = $conn->prepare("SELECT DISTINCT record_value AS group_name FROM testing_record WHERE field_key = 1 AND testing_id = ? AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
+        // Get field_key=1 values per row
+        $gnStmt = $conn->prepare("SELECT row_number, record_value FROM testing_record WHERE field_key = 1 AND testing_id = ? AND table_number = 1 AND record_value IS NOT NULL AND record_value <> '' ORDER BY row_number");
         $gnStmt->bind_param("i", $editTid);
         $gnStmt->execute();
         $gnResult = $gnStmt->get_result();
+        $fk1Rows = [];
+        while ($gn = $gnResult->fetch_assoc()) $fk1Rows[] = $gn;
+
+        // Count occurrences of each field_key=1 value to detect duplicates
+        $fk1Counts = [];
+        foreach ($fk1Rows as $row) {
+            $val = $row['record_value'];
+            $fk1Counts[$val] = ($fk1Counts[$val] ?? 0) + 1;
+        }
+
+        // For duplicated field_key=1 values, also fetch field_key=2 values
+        $fk2Map = [];
+        $hasDuplicates = false;
+        foreach ($fk1Counts as $val => $count) {
+            if ($count > 1) { $hasDuplicates = true; break; }
+        }
+        if ($hasDuplicates) {
+            $fk2Stmt = $conn->prepare("SELECT row_number, record_value FROM testing_record WHERE field_key = 2 AND testing_id = ? AND table_number = 1 ORDER BY row_number");
+            $fk2Stmt->bind_param("i", $editTid);
+            $fk2Stmt->execute();
+            $fk2Result = $fk2Stmt->get_result();
+            while ($fk2Row = $fk2Result->fetch_assoc()) {
+                $fk2Map[(int)$fk2Row['row_number']] = $fk2Row['record_value'];
+            }
+        }
+
+        // Build group name suggestions: append field_key=2 value when field_key=1 is duplicated
         $existingGroupNames = [];
-        while ($gn = $gnResult->fetch_assoc()) $existingGroupNames[] = $gn['group_name'];
+        foreach ($fk1Rows as $row) {
+            $val = $row['record_value'];
+            if ($fk1Counts[$val] > 1) {
+                $fk2Val = $fk2Map[(int)$row['row_number']] ?? '';
+                $groupName = $val . ', ' . $fk2Val;
+            } else {
+                $groupName = $val;
+            }
+            if (!in_array($groupName, $existingGroupNames)) {
+                $existingGroupNames[] = $groupName;
+            }
+        }
     }
 }
 if (!isset($existingGroupNames)) $existingGroupNames = [];

@@ -27,13 +27,31 @@ while ($row = $rQ->fetch_assoc()) {
     $fieldsByTid[$tid][$rn][] = ['field_name' => $row['field_name'], 'value_type' => $row['value_type'], 'record_value' => $row['record_value']];
 }
 
-// Build reverse map: (testing_id, record_value of field_key=1) → row_number
+// Build reverse map: group_name → row_number
+// Supports both "fk1_value" and "fk1_value, fk2_value" format group names
 $fk1Map = [];
 $fk1Q = $conn->query("SELECT testing_id, row_number, record_value FROM testing_record WHERE field_key = 1 AND table_number = 1 AND record_value IS NOT NULL AND record_value <> '' ORDER BY testing_id, row_number");
+$fk1Rows = [];
 while ($fk1Row = $fk1Q->fetch_assoc()) {
     $tid = (int)$fk1Row['testing_id'];
     if (!isset($fk1Map[$tid])) $fk1Map[$tid] = [];
     $fk1Map[$tid][$fk1Row['record_value']] = (int)$fk1Row['row_number'];
+    $fk1Rows[] = ['tid' => $tid, 'rn' => (int)$fk1Row['row_number'], 'val' => $fk1Row['record_value']];
+}
+
+// Also build combined "fk1, fk2" format entries for group_name resolution
+$fk2Q = $conn->query("SELECT testing_id, row_number, record_value FROM testing_record WHERE field_key = 2 AND table_number = 1 ORDER BY testing_id, row_number");
+$fk2ByTidRn = [];
+while ($fk2Row = $fk2Q->fetch_assoc()) {
+    $fk2ByTidRn[(int)$fk2Row['testing_id']][(int)$fk2Row['row_number']] = $fk2Row['record_value'];
+}
+foreach ($fk1Rows as $row) {
+    $tid = $row['tid'];
+    $rn = $row['rn'];
+    if (isset($fk2ByTidRn[$tid][$rn])) {
+        $combinedKey = $row['val'] . ', ' . $fk2ByTidRn[$tid][$rn];
+        $fk1Map[$tid][$combinedKey] = $rn;
+    }
 }
 
 $conn->close();

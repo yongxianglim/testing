@@ -28,15 +28,28 @@ $groupName = $media['group_name'];
 $isImage   = str_starts_with($media['mime_type'], 'image/');
 
 // Resolve row_number from group_name:
-// group_name stores the record_value of field_key=1 for the row → look up the row_number
+// group_name may be "fk1_value" or "fk1_value, fk2_value" format
 $rowNumber = null;
 $rowFields = [];
 
 if ($groupName !== null && $groupName !== '') {
+    // Try exact match with field_key=1 first
     $rStmt = $conn->prepare("SELECT row_number FROM testing_record WHERE testing_id = ? AND field_key = 1 AND record_value = ? AND table_number = 1 LIMIT 1");
     $rStmt->bind_param("is", $tid, $groupName);
     $rStmt->execute();
     $rRow = $rStmt->get_result()->fetch_assoc();
+
+    // If no match and group_name contains ", ", try combined fk1+fk2 format
+    if (!$rRow && strpos($groupName, ', ') !== false) {
+        $parts = explode(', ', $groupName, 2);
+        $fk1Val = $parts[0];
+        $fk2Val = $parts[1];
+        $rStmt2 = $conn->prepare("SELECT r1.row_number FROM testing_record r1 JOIN testing_record r2 ON r2.testing_id = r1.testing_id AND r2.row_number = r1.row_number AND r2.table_number = r1.table_number WHERE r1.testing_id = ? AND r1.field_key = 1 AND r1.record_value = ? AND r2.field_key = 2 AND r2.record_value = ? AND r1.table_number = 1 LIMIT 1");
+        $rStmt2->bind_param("iss", $tid, $fk1Val, $fk2Val);
+        $rStmt2->execute();
+        $rRow = $rStmt2->get_result()->fetch_assoc();
+    }
+
     if ($rRow) {
         $rowNumber = (int)$rRow['row_number'];
     }

@@ -816,7 +816,7 @@ $conn->close();
                 var captionEl = document.createElement('div');
                 captionEl.className = 'item-caption';
                 captionEl.innerHTML = '<div class="item-name" title="' + escHtml(m.file_name) + '">' + escHtml(m.file_name) + '</div>' +
-                    '<div class="item-sub">' + escHtml(m.project_title) + (m.group_name ? ' · ' + escHtml(m.group_name) : '') + '</div>';
+                    '<div class="item-sub">' + escHtml(m.project_title) + '</div>';
 
                 item.appendChild(checkEl);
                 item.appendChild(thumbEl);

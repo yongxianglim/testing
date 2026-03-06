@@ -59,11 +59,8 @@ $conn->close();
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <?php include 'head.php'; ?>
     <title>Media Compare — Subjective Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -398,8 +395,19 @@ $conn->close();
         }
         .picker-view-btn.active { background:rgba(107,141,181,0.12); color:#6B8DB5; border-color:rgba(107,141,181,0.35); }
 
-        .picker-media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
-        .picker-media-grid.list-view { grid-template-columns:1fr; gap:6px; }
+        .picker-media-grid { display:flex; flex-direction:column; gap:18px; }
+        .picker-group-header {
+            display:flex; align-items:center; gap:8px; padding:0 2px 8px;
+            font-size:13px; font-weight:700; color:#4A5568; border-bottom:1px solid rgba(107,141,181,0.1);
+            margin-bottom:10px;
+        }
+        .picker-group-header i { color:#6B8DB5; font-size:13px; }
+        .picker-group-header .picker-group-count {
+            font-size:10.5px; color:#A0AEC0; background:rgba(107,141,181,0.1);
+            padding:2px 7px; border-radius:20px; font-weight:600; margin-left:auto;
+        }
+        .picker-group-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+        .picker-group-grid.list-view { grid-template-columns:1fr; gap:6px; }
 
         .picker-media-item {
             border:2px solid rgba(107,141,181,0.12); border-radius:14px; overflow:hidden;
@@ -431,12 +439,12 @@ $conn->close();
         .picker-media-item .item-sub { font-size:10.5px; color:#A0AEC0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 
         /* List view */
-        .picker-media-grid.list-view .picker-media-item { border-radius:11px; }
-        .picker-media-grid.list-view .item-thumb { width:50px; aspect-ratio:1/1; flex-shrink:0; border-radius:0; }
-        .picker-media-grid.list-view .picker-media-item { display:flex; flex-direction:row; align-items:center; }
-        .picker-media-grid.list-view .item-caption { border-top:none; border-left:1px solid rgba(107,141,181,0.08); flex:1; min-width:0; padding:10px 12px; }
-        .picker-media-grid.list-view .item-check { position:static; margin-right:10px; flex-shrink:0; }
-        .picker-media-grid.list-view .picker-media-item.selected .item-check { order:-1; }
+        .picker-group-grid.list-view .picker-media-item { border-radius:11px; }
+        .picker-group-grid.list-view .item-thumb { width:50px; aspect-ratio:1/1; flex-shrink:0; border-radius:0; }
+        .picker-group-grid.list-view .picker-media-item { display:flex; flex-direction:row; align-items:center; }
+        .picker-group-grid.list-view .item-caption { border-top:none; border-left:1px solid rgba(107,141,181,0.08); flex:1; min-width:0; padding:10px 12px; }
+        .picker-group-grid.list-view .item-check { position:static; margin-right:10px; flex-shrink:0; }
+        .picker-group-grid.list-view .picker-media-item.selected .item-check { order:-1; }
 
         .picker-empty { padding:50px 20px; text-align:center; color:#A0AEC0; }
         .picker-empty i { font-size:42px; margin-bottom:14px; display:block; opacity:0.4; }
@@ -469,26 +477,7 @@ $conn->close();
     </style>
 </head>
 <body>
-    <canvas id="particles-bg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
-    <div class="page-orbs">
-        <div class="orb orb-1"></div><div class="orb orb-2"></div>
-        <div class="orb orb-3"></div><div class="orb orb-4"></div><div class="orb orb-5"></div>
-    </div>
-    <script>
-    (function(){
-        var c=document.getElementById('particles-bg'),ctx=c.getContext('2d');
-        c.width=window.innerWidth;c.height=window.innerHeight;
-        var pts=[];
-        for(var i=0;i<50;i++) pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-0.5)*0.2,vy:(Math.random()-0.5)*0.2,r:Math.random()*1.5+0.5,o:Math.random()*0.25+0.05});
-        function draw(){
-            ctx.clearRect(0,0,c.width,c.height);
-            for(var i=0;i<pts.length;i++){var p=pts[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(107,141,181,'+p.o+')';ctx.fill();for(var j=i+1;j<pts.length;j++){var q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);if(d<150){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba(107,141,181,'+(0.04*(1-d/150))+')';ctx.stroke();}}}
-            requestAnimationFrame(draw);
-        }
-        draw();
-        window.addEventListener('resize',function(){c.width=window.innerWidth;c.height=window.innerHeight;});
-    })();
-    </script>
+    <?php include 'orbs.php'; ?>
     <div class="app-layout">
         <?php include 'navbar.php'; ?>
         <div class="main-content">
@@ -768,7 +757,7 @@ $conn->close();
 
         document.getElementById('pickerResultCount').innerHTML = '<strong>' + results.length + '</strong> item' + (results.length !== 1 ? 's' : '');
 
-        grid.className = 'picker-media-grid' + (pickerView === 'list' ? ' list-view' : '');
+        grid.className = 'picker-media-grid';
         grid.innerHTML = '';
 
         if (results.length === 0) {
@@ -776,47 +765,78 @@ $conn->close();
             return;
         }
 
+        // Group results by group_name (preserve order of first appearance)
+        var groupOrder = [];
+        var grouped = {};
         results.forEach(function(m) {
-            var item = document.createElement('div');
-            item.className = 'picker-media-item' + (m.media_id === pickerSelectedId ? ' selected' : '');
-            item.dataset.mediaId = m.media_id;
-
-            var checkEl = document.createElement('div');
-            checkEl.className = 'item-check';
-            checkEl.innerHTML = '<i class="fas fa-check"></i>';
-
-            var thumbEl = document.createElement('div');
-            thumbEl.className = 'item-thumb';
-            if (m.is_image) {
-                var img = document.createElement('img');
-                img.src = 'media.php?id=' + m.media_id;
-                img.alt = m.file_name;
-                img.loading = 'lazy';
-                thumbEl.appendChild(img);
-            } else {
-                thumbEl.innerHTML = '<i class="fas fa-file file-icon"></i>';
+            var gn = m.group_name || 'Ungrouped';
+            if (!grouped[gn]) {
+                grouped[gn] = [];
+                groupOrder.push(gn);
             }
+            grouped[gn].push(m);
+        });
 
-            var captionEl = document.createElement('div');
-            captionEl.className = 'item-caption';
-            captionEl.innerHTML = '<div class="item-name" title="' + escHtml(m.file_name) + '">' + escHtml(m.file_name) + '</div>' +
-                '<div class="item-sub">' + escHtml(m.project_title) + (m.group_name ? ' · ' + escHtml(m.group_name) : '') + '</div>';
+        var isListView = pickerView === 'list';
 
-            item.appendChild(checkEl);
-            item.appendChild(thumbEl);
-            item.appendChild(captionEl);
+        groupOrder.forEach(function(gn) {
+            var section = document.createElement('div');
+            section.className = 'picker-group-section';
 
-            (function(mediaId) {
-                item.addEventListener('click', function() {
-                    pickerSelectItem(mediaId);
-                });
-                item.addEventListener('dblclick', function() {
-                    pickerSelectItem(mediaId);
-                    pickerConfirmSelection();
-                });
-            })(m.media_id);
+            var header = document.createElement('div');
+            header.className = 'picker-group-header';
+            header.innerHTML = '<i class="fas fa-layer-group"></i>' + escHtml(gn) +
+                '<span class="picker-group-count">' + grouped[gn].length + '</span>';
+            section.appendChild(header);
 
-            grid.appendChild(item);
+            var subGrid = document.createElement('div');
+            subGrid.className = 'picker-group-grid' + (isListView ? ' list-view' : '');
+
+            grouped[gn].forEach(function(m) {
+                var item = document.createElement('div');
+                item.className = 'picker-media-item' + (m.media_id === pickerSelectedId ? ' selected' : '');
+                item.dataset.mediaId = m.media_id;
+
+                var checkEl = document.createElement('div');
+                checkEl.className = 'item-check';
+                checkEl.innerHTML = '<i class="fas fa-check"></i>';
+
+                var thumbEl = document.createElement('div');
+                thumbEl.className = 'item-thumb';
+                if (m.is_image) {
+                    var img = document.createElement('img');
+                    img.src = 'media.php?id=' + m.media_id;
+                    img.alt = m.file_name;
+                    img.loading = 'lazy';
+                    thumbEl.appendChild(img);
+                } else {
+                    thumbEl.innerHTML = '<i class="fas fa-file file-icon"></i>';
+                }
+
+                var captionEl = document.createElement('div');
+                captionEl.className = 'item-caption';
+                captionEl.innerHTML = '<div class="item-name" title="' + escHtml(m.file_name) + '">' + escHtml(m.file_name) + '</div>' +
+                    '<div class="item-sub">' + escHtml(m.project_title) + '</div>';
+
+                item.appendChild(checkEl);
+                item.appendChild(thumbEl);
+                item.appendChild(captionEl);
+
+                (function(mediaId) {
+                    item.addEventListener('click', function() {
+                        pickerSelectItem(mediaId);
+                    });
+                    item.addEventListener('dblclick', function() {
+                        pickerSelectItem(mediaId);
+                        pickerConfirmSelection();
+                    });
+                })(m.media_id);
+
+                subGrid.appendChild(item);
+            });
+
+            section.appendChild(subGrid);
+            grid.appendChild(section);
         });
     }
 

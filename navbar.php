@@ -55,14 +55,30 @@ $initials = strtoupper(substr($user, 0, 2));
     background: rgba(107, 141, 181, 0.12);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
+.sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.main-content {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 .sidebar-collapsed .sidebar {
-    transform: translateX(-100%);
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 !important;
+    border: none !important;
+    pointer-events: none;
 }
 .sidebar-collapsed .sidebar-expand-btn {
     display: flex;
 }
 .sidebar-collapsed .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
 }
 .sidebar-collapsed .main-header {
     padding-left: 68px;

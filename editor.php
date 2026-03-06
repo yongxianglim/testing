@@ -2481,7 +2481,7 @@ function splitProjectTitle($pt)
 
                     <!-- ── META ──────────────────────────────────── -->
                     <div class="card">
-                        <h2><i class="fas fa-info-circle"></i> Edit Meta — Testing #<?= $editTid ?></h2>
+                        <h2><i class="fas fa-info-circle"></i> Edit Meta — Testing <?= htmlspecialchars($editData['testing_name']) ?></h2>
 
                         <form method="POST" id="fUM">
                             <input type="hidden" name="action" value="update_meta">
@@ -2521,7 +2521,7 @@ function splitProjectTitle($pt)
 
                     <!-- ── FIELDS ─────────────────────────────────── -->
                     <div class="card">
-                        <h2><i class="fas fa-sliders"></i> Configure Fields — Testing #<?= $editTid ?></h2>
+                        <h2><i class="fas fa-sliders"></i> Configure Fields — Testing <?= htmlspecialchars($editData['testing_name']) ?></h2>
                         <form method="POST" id="fCF">
                             <input type="hidden" name="action" value="configure_fields">
                             <input type="hidden" name="testing_id" value="<?= $editTid ?>">
@@ -2556,7 +2556,7 @@ function splitProjectTitle($pt)
 
                     <!-- ── RECORDS ────────────────────────────────── -->
                     <div class="card">
-                        <h2><i class="fas fa-table"></i> Record Data — Testing #<?= $editTid ?></h2>
+                        <h2><i class="fas fa-table"></i> Record Data — Testing <?= htmlspecialchars($editData['testing_name']) ?></h2>
                         <!-- Engineer Check for Table 1 (inline, AJAX) -->
                         <div class="engineer-check-inline" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
                             <div class="engineer-check-row <?= $checkedT1 ? '' : 'unchecked' ?>" id="engCheckRowT1" style="flex-shrink:0;">
@@ -2803,8 +2803,9 @@ function splitProjectTitle($pt)
                             <table>
                                 <thead><tr>
                                     <th style="width:40px;">#</th>
-                                    <?php foreach ($editFields as $fd): ?><th><?= htmlspecialchars($fd['field_name']) ?></th><?php endforeach; ?>
+                                    <?php foreach ($tf as $fd2): ?><th><?= htmlspecialchars($fd2['field_name']) ?></th><?php endforeach; ?>
                                     <th style="text-align:center;"><i class="fas fa-calculator"></i> Avg</th>
+                                    <?php foreach ($nf as $fd2): ?><th><?= htmlspecialchars($fd2['field_name']) ?></th><?php endforeach; ?>
                                 </tr></thead>
                                 <tbody>
                                 <?php if (empty($editRowsOther)): ?>
@@ -2814,18 +2815,16 @@ function splitProjectTitle($pt)
                                     foreach ($editRowsOther as $rn2 => $rd2):
                                         $ri2++;
                                         $nv2 = [];
-                                        foreach ($editFields as $fd2) {
-                                            if ($fd2['value_type'] !== 'text') {
-                                                $v2 = $rd2[(int)$fd2['field_key']] ?? '';
-                                                if ($v2 !== '' && is_numeric($v2) && (float)$v2 >= 0) $nv2[] = (float)$v2;
-                                            }
+                                        foreach ($nf as $fd2) {
+                                            $v2 = $rd2[(int)$fd2['field_key']] ?? '';
+                                            if ($v2 !== '' && is_numeric($v2) && (float)$v2 >= 0) $nv2[] = (float)$v2;
                                         }
                                         $avg2 = count($nv2) > 0 ? array_sum($nv2) / count($nv2) : null;
                                         $cls2 = getAvgClass($avg2);
                                 ?>
                                     <tr>
                                         <td style="text-align:center;color:#A0AEC0;font-weight:700;"><?= $ri2 ?></td>
-                                        <?php foreach ($editFields as $fd2):
+                                        <?php foreach ($tf as $fd2):
                                             $fk2 = (int)$fd2['field_key'];
                                             $v2 = htmlspecialchars($rd2[$fk2] ?? '');
                                         ?>
@@ -2836,6 +2835,12 @@ function splitProjectTitle($pt)
                                         <?php else: ?>
                                             <td class="avg-cell avg-na">N/A</td>
                                         <?php endif; ?>
+                                        <?php foreach ($nf as $fd2):
+                                            $fk2 = (int)$fd2['field_key'];
+                                            $v2 = htmlspecialchars($rd2[$fk2] ?? '');
+                                        ?>
+                                            <td style="color:#4A5568;"><?= $v2 !== '' ? $v2 : '—' ?></td>
+                                        <?php endforeach; ?>
                                     </tr>
                                 <?php endforeach; endif; ?>
                                 </tbody>

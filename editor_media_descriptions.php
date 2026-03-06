@@ -2263,7 +2263,7 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
                 <?php if ($editData): ?>
                     <!-- ── MEDIA ──────────────────────────────────── -->
                     <div class="card">
-                        <h2><i class="fas fa-images"></i> Media — Testing #<?= $editTid ?></h2>
+                        <h2><i class="fas fa-images"></i> Media — Testing <?= htmlspecialchars($editData['testing_name']) ?></h2>
 
                         <?php if (!empty($editMedia)):
                             // Group saved media
@@ -2425,7 +2425,7 @@ if (!isset($existingGroupNames)) $existingGroupNames = [];
 
                     <!-- ── DESCRIPTIONS ───────────────────────────── -->
                     <div class="card">
-                        <h2><i class="fas fa-align-left"></i> Descriptions — Testing #<?= $editTid ?></h2>
+                        <h2><i class="fas fa-align-left"></i> Descriptions — Testing <?= htmlspecialchars($editData['testing_name']) ?></h2>
                         <?php if (!empty($editDesc)): foreach ($editDesc as $i => $desc): ?>
                                 <div class="desc-card">
                                     <pre style="margin:0;border:none;background:none;padding:0;"><?= htmlspecialchars($desc['content']) ?></pre>

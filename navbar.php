@@ -4,6 +4,76 @@ $user = currentUser();
 $currentPage = basename($_SERVER['PHP_SELF']);
 $initials = strtoupper(substr($user, 0, 2));
 ?>
+<style>
+/* ── Sidebar Collapse Toggle (Desktop) ──────── */
+.sidebar-header { position: relative; }
+.sidebar-collapse-btn {
+    position: absolute;
+    top: 26px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(107, 141, 181, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    color: #A0AEC0;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+.sidebar-collapse-btn:hover {
+    background: rgba(107, 141, 181, 0.1);
+    color: #6B8DB5;
+}
+.sidebar-expand-btn {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 200;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(107, 141, 181, 0.1);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    color: #6B8DB5;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+.sidebar-expand-btn:hover {
+    background: rgba(107, 141, 181, 0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+}
+.sidebar-collapsed .sidebar-expand-btn {
+    display: flex;
+}
+.sidebar-collapsed .main-content {
+    margin-left: 0;
+}
+.sidebar-collapsed .main-header {
+    padding-left: 68px;
+}
+@media (max-width: 768px) {
+    .sidebar-collapse-btn,
+    .sidebar-expand-btn {
+        display: none !important;
+    }
+}
+</style>
 <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button>
 <div class="sidebar">
     <div class="sidebar-header">
@@ -14,6 +84,9 @@ $initials = strtoupper(substr($user, 0, 2));
                 <div class="brand-sub">Testing Portal</div>
             </div>
         </a>
+        <button class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
+            <i class="fas fa-angles-left"></i>
+        </button>
     </div>
     <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
@@ -42,3 +115,26 @@ $initials = strtoupper(substr($user, 0, 2));
         <a href="logout.php" class="sidebar-logout"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
     </div>
 </div>
+<button class="sidebar-expand-btn" onclick="toggleSidebarCollapse()" title="Expand sidebar">
+    <i class="fas fa-angles-right"></i>
+</button>
+<script>
+function toggleSidebarCollapse() {
+    var layout = document.querySelector('.app-layout');
+    if (!layout) return;
+    layout.classList.toggle('sidebar-collapsed');
+    // Persist preference
+    try {
+        localStorage.setItem('sidebarCollapsed', layout.classList.contains('sidebar-collapsed') ? '1' : '0');
+    } catch(e) {}
+}
+// Restore sidebar state on load
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (localStorage.getItem('sidebarCollapsed') === '1') {
+            var layout = document.querySelector('.app-layout');
+            if (layout) layout.classList.add('sidebar-collapsed');
+        }
+    } catch(e) {}
+});
+</script>

@@ -27,6 +27,33 @@ while ($row = $rQ->fetch_assoc()) {
     $fieldsByTid[$tid][$rn][] = ['field_name' => $row['field_name'], 'value_type' => $row['value_type'], 'record_value' => $row['record_value']];
 }
 
+// Build reverse map: group_name → row_number
+// Supports both "fk1_value" and "fk1_value, fk2_value" format group names
+$fk1Map = [];
+$fk1Q = $conn->query("SELECT testing_id, row_number, record_value FROM testing_record WHERE field_key = 1 AND table_number = 1 AND record_value IS NOT NULL AND record_value <> '' ORDER BY testing_id, row_number");
+$fk1Rows = [];
+while ($fk1Row = $fk1Q->fetch_assoc()) {
+    $tid = (int)$fk1Row['testing_id'];
+    if (!isset($fk1Map[$tid])) $fk1Map[$tid] = [];
+    $fk1Map[$tid][$fk1Row['record_value']] = (int)$fk1Row['row_number'];
+    $fk1Rows[] = ['tid' => $tid, 'rn' => (int)$fk1Row['row_number'], 'val' => $fk1Row['record_value']];
+}
+
+// Also build combined "fk1, fk2" format entries for group_name resolution
+$fk2Q = $conn->query("SELECT testing_id, row_number, record_value FROM testing_record WHERE field_key = 2 AND table_number = 1 ORDER BY testing_id, row_number");
+$fk2ByTidRn = [];
+while ($fk2Row = $fk2Q->fetch_assoc()) {
+    $fk2ByTidRn[(int)$fk2Row['testing_id']][(int)$fk2Row['row_number']] = $fk2Row['record_value'];
+}
+foreach ($fk1Rows as $row) {
+    $tid = $row['tid'];
+    $rn = $row['rn'];
+    if (isset($fk2ByTidRn[$tid][$rn])) {
+        $combinedKey = $row['val'] . ', ' . $fk2ByTidRn[$tid][$rn];
+        $fk1Map[$tid][$combinedKey] = $rn;
+    }
+}
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -598,7 +625,7 @@ $conn->close();
             $mn  = $m['file_name'];
             $mt  = $m['mime_type'];
             $mid = (int)$m['media_id'];
-            $rn  = is_numeric($gn) ? (int)$gn : null; // group_name == row_number mapping
+            $rn  = isset($fk1Map[$tid][$gn]) ? $fk1Map[$tid][$gn] : null; // group_name == field_key=1 record_value → row_number mapping
 
             // Build field rows for this media via group_name→row_number
             $fields = [];
@@ -901,13 +928,13 @@ $conn->close();
         slotEl.classList.add('active');
 
         if (m.is_image) {
-            imgArea.innerHTML = '<a href="media.php?id=' + mid + '" target="_blank">' +
+            imgArea.innerHTML = '<a href="media_detail.php?media_id=' + mid + '">' +
                 '<img src="media.php?id=' + mid + '" alt="' + escHtml(m.file_name) + '">' +
                 '</a>';
         } else {
             imgArea.innerHTML = '<div class="slot-no-image"><i class="fas fa-file" style="color:#6B8DB5;"></i>' +
-                '<a href="media.php?id=' + mid + '" target="_blank" class="btn btn-sm btn-secondary" style="margin-top:8px;">' +
-                '<i class="fas fa-download"></i> ' + escHtml(m.file_name) + '</a></div>';
+                '<a href="media_detail.php?media_id=' + mid + '" class="btn btn-sm btn-secondary" style="margin-top:8px;">' +
+                '<i class="fas fa-eye"></i> View Details</a></div>';
         }
 
         var rowLabel = m.group_name ? 'Group: ' + escHtml(m.group_name) : '';

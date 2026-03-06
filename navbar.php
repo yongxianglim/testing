@@ -22,7 +22,7 @@ $initials = strtoupper(substr($user, 0, 2));
             <a href="media_compare.php" class="<?= $currentPage === 'media_compare.php' ? 'active' : '' ?>"><i class="fas fa-images"></i><span>Media Compare</span></a>
         <?php endif; ?>
         <?php if (in_array($role, ['EDITOR', 'DEVELOPER'])): ?>
-            <a href="editor.php" class="<?= $currentPage === 'editor.php' ? 'active' : '' ?>"><i class="fas fa-pen-to-square"></i><span>Insert / Edit</span></a>
+            <a href="editor.php" class="<?= ($currentPage === 'editor.php' || $currentPage === 'editor_media_descriptions.php') ? 'active' : '' ?>"><i class="fas fa-pen-to-square"></i><span>Insert / Edit</span></a>
         <?php endif; ?>
         <?php if ($role === 'DEVELOPER'): ?>
             <div class="nav-label" style="margin-top:10px;">Developer</div>
